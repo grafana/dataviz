@@ -6,6 +6,11 @@
 # before handing the file to the CLI (belt and braces).
 x_dataviz:
   crowdin_project_id: '36'
+  # Paused until cutover: grafana/clock-panel still owns Crowdin project 36,
+  # and a project can have only one writer. The Vault secret below does not
+  # exist yet either. Remove this line at cutover step 4 in
+  # .claude/commands/clock-panel-cutover.md.
+  crowdin_sync: false
 
 # Everything else is derived: this package's Vault secret is
 # grafana-clock-panel-crowdin-token, from its plugin id. Optional overrides and

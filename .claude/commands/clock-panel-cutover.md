@@ -48,8 +48,12 @@ plugin's code, so they cannot be mechanically ported:
 ## Cutover order
 
 1. **Start now — has human lead time.** Provision Vault secret
-   `ci/repo/grafana/dataViz/grafana-clock-panel-crowdin-token` and authorize
-   dataViz's OIDC identity. See `grafana-engineering:vault-add-secret`.
+   `ci/repo/grafana/dataviz/grafana-clock-panel-crowdin-token` and authorize
+   dataviz's OIDC identity. See `grafana-engineering:vault-add-secret`.
+   Use the lowercase repo name: Vault paths are case-sensitive, and the repo
+   was renamed from `dataViz`. Since the rename, reads under
+   `ci/data/repo/grafana/dataviz/` return 403, not 404. So check that the
+   policy covers the new name, not only that the secret exists.
 
    **Only Frontend Platform can do this — ask in `#grafana-frontend-platform`.**
    It is not clock-panel's token moved or copied. Following Frontend
@@ -69,7 +73,7 @@ plugin's code, so they cannot be mechanically ported:
    if two packages resolve to the same path. So clock-panel's is
    `grafana-clock-panel-crowdin-token`, and each future import gets its own.
 
-   So the ask is a token named `dataViz-github-actions` scoped to the
+   So the ask is a token named `dataviz-github-actions` scoped to the
    **existing** project 36. The doc's procedure assumes a brand-new Crowdin
    project, which this is not — do not create a second project. Clock-panel's
    own token keeps working until step 3 and should be revoked after it, not
@@ -77,7 +81,7 @@ plugin's code, so they cannot be mechanically ported:
    truth.
 
    The path is written two ways and both are right: you type
-   `repo/grafana/dataViz/grafana-clock-panel-crowdin-token` into the `ci`
+   `repo/grafana/dataviz/grafana-clock-panel-crowdin-token` into the `ci`
    secrets engine in the Vault UI, and KV v2 injects `/data/`, giving the
    `ci/data/repo/...` form that `get-vault-secrets` resolves at run time.
 
@@ -89,7 +93,11 @@ plugin's code, so they cannot be mechanically ported:
    `src/plugin.json` (`repository`, `license`, `raise issue`) 404s until then.
    Must land before the plugin is next published.
 3. **Upstream disables its three Crowdin workflows and `publish.yml`.**
-4. **Enable them here** — copy to the repo root, path-scope to
+4. **Enable them here.** The root `i18n-crowdin-*.yml` workflows already
+   discover clock-panel. They skip it only because its `crowdin.yml` sets
+   `x_dataviz.crowdin_sync: false`. Delete that line to enable the Crowdin
+   workflows, after step 1's secret exists and step 3 is done.
+   For `publish.yml`: copy to the repo root, path-scope to
    `plugins/packages/@plugins/grafana-clock-panel/**`, and swap `npm ci` for
    pnpm (`pnpm install --frozen-lockfile` + `pnpm --filter <pkg> run <script>`).
    Keep the real logic in the package's own `package.json` scripts so only thin
