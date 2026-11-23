@@ -178,6 +178,7 @@ No workflow edits are needed.
 | `vault_secret_key` | `access_token` | key within that secret |
 | `github_board_id` | `76` | project board for translation PRs |
 | `pr_labels` | `i18n` | comma-separated labels for translation PRs |
+| `crowdin_sync` | `true` | `false` skips upload, download and create-tasks for this package; verify still runs. Use it while another repo still writes to the Crowdin project |
 | `plugins` | derived | only for packages that publish several plugins, see below |
 
 ## Packages and plugins
@@ -233,10 +234,10 @@ Each of these would otherwise fail quietly or confusingly later:
 Each plugin has its own Crowdin token, because Crowdin tokens are scoped to one project. The Vault path is:
 
 ```
-ci/data/repo/grafana/dataViz/<plugin id>-crowdin-token     key: access_token
+ci/data/repo/grafana/dataviz/<plugin id>-crowdin-token     key: access_token
 ```
 
-In the Vault UI you type `repo/grafana/dataViz/...` into the `ci` secrets engine; KV v2 adds `data/`. The repo segment comes from `github.repository` and can't be configured.
+In the Vault UI you type `repo/grafana/dataviz/...` into the `ci` secrets engine; KV v2 adds `data/`. The repo segment comes from `github.repository` and can't be configured. Vault paths are case-sensitive, so use the lowercase name: the repository was renamed from `dataViz`, and secrets stored under the old path are not found.
 
 Other Grafana repos use the name `grafana-frontend-crowdin-token`. That name identifies the Crowdin bot account's owning team, not a project, so it can't tell several plugins apart here.
 

@@ -69,6 +69,18 @@ runs:
           pkg="$(jq -r '.name' "$dir/package.json")"
           meta="$(yq -o=json '.x_dataviz // {}' "$cfg")"
 
+          # x_dataviz.crowdin_sync: false keeps the package in `packages`, so
+          # verify still runs, but leaves its plugins out of `plugins`, so
+          # upload, download and create-tasks skip it. This is for an imported
+          # plugin whose old repo still owns its Crowdin project: a Crowdin
+          # project must have one writer. A paused package still goes through
+          # every check below, so turning sync on later does not reveal a
+          # config error for the first time. `//` can't supply the default,
+          # because jq treats false as missing.
+          sync="$(jq -r 'if has("crowdin_sync") then .crowdin_sync else true end' <<<"$meta")"
+          [[ "$sync" == true || "$sync" == false ]] \
+            || { echo "::error file=$cfg::x_dataviz.crowdin_sync must be true or false, got '$sync'"; exit 1; }
+
           # Having a crowdin.yml and having a working extraction pipeline are
           # two different facts. `pnpm --filter` exits 0 on a missing script,
           # so assert here rather than fan out a job that passes vacuously.
@@ -120,7 +132,8 @@ runs:
               --arg dir "$dir" --arg pkg "$pkg" --arg slug "$id" \
               --argjson srcs "$srcs" --argjson one "$one" --argjson meta "$meta" \
               --arg board "$DEFAULT_BOARD_ID" --arg labels "$DEFAULT_PR_LABELS" \
-              '{dir:$dir, pkg:$pkg, slug:$slug,
+              --argjson sync "$sync" \
+              '{dir:$dir, pkg:$pkg, slug:$slug, crowdin_sync:$sync,
                 sources: $srcs,
                 en_paths: ([$srcs[] | $dir + "/" + .] | join(",")),
                 project_id: ($one.crowdin_project_id // null | tostring),
@@ -156,6 +169,12 @@ runs:
           [ -z "$dupes" ] \
             || { echo "::error::two or more i18n plugins share the same $field: $dupes"; exit 1; }
         done
+
+        # Paused plugins took part in the checks above. Drop them only now.
+        paused="$(jq -r '[.[] | select(.crowdin_sync | not) | .slug] | join(", ")' <<<"$plugins")"
+        plugins="$(jq -c '[.[] | select(.crowdin_sync) | del(.crowdin_sync)]' <<<"$plugins")"
+        [ -z "$paused" ] \
+          || echo "::notice::Crowdin sync is paused (x_dataviz.crowdin_sync: false) for: $paused"
 
         echo "Plugins:  $plugins"
         echo "Packages: $packages"
