@@ -42,10 +42,25 @@ can be styled; those options are meaningless for the heatmap cells themselves.
 | —                                                                     | `heatmapColorScale.placement` (Right/Bottom/None visualMap)                                                                                                                                            | ECharts-only              |
 | —                                                                     | per-field `seriesType` cartesian overlay                                                                                                                                                               | ECharts-only              |
 
-The supported core options use core's own option paths, so the options of a
-panel switched from core Grafana's heatmap stay. The comparison dashboards are
-`provisioning/dashboards/heatmap-core-parity-*.json` (TestData) and
-`lgtm/provisioning/dashboards/heatmap-core-parity-prometheus.json` (Prometheus).
+The comparison dashboards are `provisioning/dashboards/heatmap-core-parity-*.json` (TestData).
+
+## Change from core Heatmap
+
+Grafana does not keep the options of the previous panel type in a type change. The panel change handler
+([panelChange.ts](./panelChange.ts)) copies the options of a core Heatmap panel as follows.
+
+| Core option                                                                 | ECharts option                | Decision                                                                                                                                     |
+| --------------------------------------------------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `calculate`, `calculation`, `cellGap`, `filterValues.le`, `filterValues.ge` | Same path                     | Copied                                                                                                                                       |
+| `yAxis.unit`, `yAxis.decimals`, `yAxis.min`, `yAxis.max`, `yAxis.reverse`   | Same path                     | Copied                                                                                                                                       |
+| `color.mode`, `color.fill`, `color.scale`, `color.exponent`                 | Same path                     | Copied                                                                                                                                       |
+| `color.min`, `color.max`                                                    | Same path                     | Copied                                                                                                                                       |
+| `rowsFrame.yBucketScale`                                                    | Same path                     | Copied                                                                                                                                       |
+| `tooltip.mode`, `tooltip.maxWidth`, `tooltip.maxHeight`                     | Same path                     | Copied                                                                                                                                       |
+| `color.scheme`                                                              | `heatmapColorScheme`          | `Spectral`, `Turbo`, `Blues` and `Magma` are copied in lower case. Each other scheme has no ECharts gradient, so the panel uses its default. |
+| `legend.show`                                                               | `heatmapColorScale.placement` | The core legend is the color scale, below the chart. `true` gives `bottom`, and `false` gives `none`.                                        |
+| `legend` (other keys)                                                       | `legend`                      | Not copied. The Grafana legend of this panel is for the overlay series only.                                                                 |
+| Each option with the status "Not supported" in the table above              | none                          | Not copied                                                                                                                                   |
 
 ## Standard (field-config) options
 

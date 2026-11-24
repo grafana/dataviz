@@ -12,6 +12,7 @@ import { preloadHeatmapCalculator } from 'lib/grafana/heatmap/calculate';
 import { heatmapColorSchemeDefault, heatmapLayoutDefault } from 'lib/echarts/options/constants';
 import { heatmapColorSchemeOptions, heatmapLayoutOptions } from 'modules/heatmap/constants';
 import { type PanelOptions } from 'types';
+import { heatmapPanelChangeHandler } from './panelChange';
 import { heatmapSuggestionsSupplier } from './suggestions';
 
 // Initialize i18n before the option builders below call `t()`. Every module is
@@ -115,4 +116,6 @@ export const plugin = new PanelPlugin<PanelOptions, EChartsFieldConfig>(
   })
   // Best fit whenever the data is tagged as a Grafana heatmap frame (opts in
   // via `"suggestions": true` in plugin.json).
-  .setSuggestionsSupplier(heatmapSuggestionsSupplier);
+  .setSuggestionsSupplier(heatmapSuggestionsSupplier)
+  // A change from core Heatmap keeps the core options that this panel reads.
+  .setPanelChangeHandler(heatmapPanelChangeHandler);

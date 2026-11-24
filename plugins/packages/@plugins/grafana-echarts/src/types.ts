@@ -94,8 +94,8 @@ export interface HeatmapYBucketScale {
 
 /**
  * The subset of core Grafana heatmap panel options that the heatmap family
- * reads. The paths are core's own, so a panel switched from the core heatmap
- * keeps its settings.
+ * reads. The paths are core's own. The panel change handler
+ * (`modules/heatmap/panelChange.ts`) copies them from a core heatmap panel.
  * https://grafana.com/docs/grafana/latest/panels-visualizations/visualizations/heatmap/
  */
 export interface CoreHeatmapOptions {
