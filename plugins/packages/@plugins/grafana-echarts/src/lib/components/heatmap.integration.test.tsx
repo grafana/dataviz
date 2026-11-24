@@ -1,4 +1,13 @@
-import { cellHeights, cellRects, denseCellsFrame, largestCell, leRowsFrame, renderHeatmap } from 'test/heatmapCanvas';
+import {
+  axisLabelYs,
+  cellHeights,
+  cellRects,
+  denseCellsFrame,
+  largestCell,
+  leRowsFrame,
+  manyLeRowsFrame,
+  renderHeatmap,
+} from 'test/heatmapCanvas';
 
 // Heatmap core-parity claims, stated as counts and as differences between two
 // renders. No baselines here: the drawn geometry is pinned next door in
@@ -93,6 +102,27 @@ describe('heatmap colors', () => {
     const wide = new Set(await fills({ min: 0, max: 1000 }));
     const data = new Set(await fills());
     expect(wide.size).toBeLessThan(data.size);
+  });
+});
+
+describe('heatmap Y labels with more buckets than the labels that fit', () => {
+  // 60 buckets have 61 bounds. The plot is too short for 61 lines of 12 px text.
+  const FONT_SIZE = 12;
+  const labels = async (options?: Parameters<typeof renderHeatmap>[1]) =>
+    axisLabelYs((await renderHeatmap([manyLeRowsFrame()], options)).axisEvents);
+  const gaps = (drawn: Awaited<ReturnType<typeof labels>>) => drawn.slice(1).map((label, i) => label.y - drawn[i].y);
+
+  it.each([
+    ['Auto', undefined],
+    ['Linear', { rowsFrame: { yBucketScale: { type: 'linear' as const } } }],
+  ])('does not draw labels that overlap on the %s scale', async (_name, options) => {
+    const drawn = await labels(options);
+    expect(drawn.length).toBeGreaterThan(2);
+    expect(drawn.length).toBeLessThan(61);
+    expect(Math.min(...gaps(drawn))).toBeGreaterThanOrEqual(FONT_SIZE);
+    // The axis keeps its two bounds.
+    expect(drawn[0].text).toBe('+Inf');
+    expect(drawn[drawn.length - 1].text).toBe('0');
   });
 });
 
