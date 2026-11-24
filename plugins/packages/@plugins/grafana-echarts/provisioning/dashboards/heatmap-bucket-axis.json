@@ -28,28 +28,13 @@
   "preload": false,
   "refresh": "",
   "schemaVersion": 42,
-  "tags": [
-    "gdev",
-    "panel-tests",
-    "graph-ng"
-  ],
+  "tags": ["gdev", "panel-tests", "graph-ng"],
   "time": {
     "from": "2021-01-01T00:00:00.000Z",
     "to": "2021-01-01T05:00:00.000Z"
   },
   "timepicker": {
-    "refresh_intervals": [
-      "5s",
-      "10s",
-      "30s",
-      "1m",
-      "5m",
-      "15m",
-      "30m",
-      "1h",
-      "2h",
-      "1d"
-    ]
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
   },
   "title": "ECharts Heatmap: bucket axis",
   "uid": "echarts-heatmap-bucket-axis",
@@ -90,7 +75,7 @@
         },
         "cellGap": 2,
         "filterValues": {
-          "le": 1e-09
+          "le": 1e-9
         },
         "tooltip": {
           "mode": "single",
@@ -165,7 +150,7 @@
         },
         "cellGap": 2,
         "filterValues": {
-          "le": 1e-09
+          "le": 1e-9
         },
         "tooltip": {
           "mode": "single",

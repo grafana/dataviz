@@ -1,4 +1,13 @@
-import { cellHeights, cellRects, denseCellsFrame, largestCell, leRowsFrame, renderHeatmap } from 'test/heatmapCanvas';
+import {
+  cellHeights,
+  cellRects,
+  denseCellsFrame,
+  largestCell,
+  leRowsFrame,
+  namedRowsFrame,
+  renderHeatmap,
+} from 'test/heatmapCanvas';
+import { height } from 'test/panel';
 
 // Heatmap core-parity claims, stated as counts and as differences between two
 // renders. No baselines here: the drawn geometry is pinned next door in
@@ -21,6 +30,17 @@ describe('heatmap Y bucket scale for le rows', () => {
       rowsFrame: { yBucketScale: { type: 'log', log: 2 } },
     });
     expect(cellHeights(cellRects(seriesEvents))).toHaveLength(1);
+  });
+
+  // An axis break on each bucket collapses the rows into one line (#180).
+  it.each([
+    ['le rows', leRowsFrame],
+    ['named rows', namedRowsFrame],
+  ])('fills more than half of the panel height with the %s', async (_name, frame) => {
+    const rects = cellRects((await renderHeatmap([frame])).seriesEvents);
+    const top = Math.min(...rects.map((rect) => rect.y));
+    const bottom = Math.max(...rects.map((rect) => rect.y + rect.height));
+    expect(bottom - top).toBeGreaterThan(height / 2);
   });
 
   // ECharts reports an option that needs a feature that is not registered, such as axis `breaks` (#180).

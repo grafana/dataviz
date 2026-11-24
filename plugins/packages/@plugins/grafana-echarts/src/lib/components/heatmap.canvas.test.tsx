@@ -1,5 +1,5 @@
 import { normalizeCanvasEvents } from 'test/canvas';
-import { denseCellsFrame, leRowsFrame, renderHeatmap } from 'test/heatmapCanvas';
+import { denseCellsFrame, leRowsFrame, namedRowsFrame, renderHeatmap } from 'test/heatmapCanvas';
 import { height, width } from 'test/panel';
 import { type PanelOptions } from 'types';
 
@@ -65,6 +65,29 @@ describe('heatmap core parity canvas', () => {
     expect(normalizeCanvasEvents(axisEvents)).toMatchCanvasSnapshot([...defaultEvents, ...seriesEvents], {
       width,
       height,
+    });
+  });
+
+  // The bucket (Y) axis: the labels and ticks. The cells and grid are viewer-only context.
+  describe('bucket axis', () => {
+    const renderAxis = async (frames: Parameters<typeof renderHeatmap>[0], options: Partial<PanelOptions>) => {
+      const { seriesEvents, defaultEvents, axisEvents } = await renderHeatmap(frames, options);
+      return { axis: normalizeCanvasEvents(axisEvents), context: [...defaultEvents, ...seriesEvents] };
+    };
+
+    it('labels at the bucket bounds (le rows)', async () => {
+      const { axis, context } = await renderAxis([leRowsFrame], {});
+      expect(axis).toMatchCanvasSnapshot(context, { width, height });
+    });
+
+    it('labels at the bucket bounds, reversed', async () => {
+      const { axis, context } = await renderAxis([leRowsFrame], { yAxis: { reverse: true } });
+      expect(axis).toMatchCanvasSnapshot(context, { width, height });
+    });
+
+    it('labels at the bucket centers (named rows)', async () => {
+      const { axis, context } = await renderAxis([namedRowsFrame], {});
+      expect(axis).toMatchCanvasSnapshot(context, { width, height });
     });
   });
 });

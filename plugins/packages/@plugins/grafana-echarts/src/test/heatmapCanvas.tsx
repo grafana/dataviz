@@ -44,6 +44,20 @@ export const leRowsFrame = toDataFrame({
 });
 
 /**
+ * Rows with a name and no `le` label. The bucket axis shows each name at the
+ * center of its row.
+ */
+export const namedRowsFrame = toDataFrame({
+  meta: { type: DataFrameType.HeatmapRows },
+  fields: [
+    { name: 'time', type: FieldType.time, values: times },
+    { name: '0-10', type: FieldType.number, values: [2, 3, 5] },
+    { name: '10-20', type: FieldType.number, values: [5, 6, 9] },
+    { name: '20-30', type: FieldType.number, values: [8, 4, 6] },
+  ],
+});
+
+/**
  * Dense heatmap-cells in the shape of core's "Calculate from data" output: an
  * `xMin` time, a `yMin` lower bound per bucket and a `Count`. Buckets 1, 2, 4, 8.
  */
