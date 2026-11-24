@@ -93,6 +93,27 @@ describe('getBinnedHeatmapYAxis', () => {
     expect(axis).toMatchObject({ type: 'log', logBase: 10, min: 100, max: 100000 });
   });
 
+  it('sets log ticks at an equal distance, a tick for each second power of 2 in a 370 px plot', () => {
+    // A native histogram from 36 µs to 2.83 s on a log 2 axis: 17 magnitudes.
+    const data = baseData({ yScale: { type: 'log', log: 2 }, yMin: 2 ** -14.75, yMax: 2 ** 1.5 });
+    const axis = getBinnedHeatmapYAxis(data, undefined, 370);
+    expect(axis).toMatchObject({ min: 2 ** -15, max: 4 });
+    const ticks = [-14, -12, -10, -8, -6, -4, -2, 0, 2].map((e) => 2 ** e);
+    expect(axis).toMatchObject({ axisLabel: { customValues: ticks }, axisTick: { customValues: ticks } });
+  });
+
+  it('uses a larger tick step in a short plot', () => {
+    const data = baseData({ yScale: { type: 'log', log: 2 }, yMin: 2 ** -14.75, yMax: 2 ** 1.5 });
+    const axis = getBinnedHeatmapYAxis(data, undefined, 150);
+    const ticks = [-15, -10, -5, 0].map((e) => 2 ** e);
+    expect(axis).toMatchObject({ axisLabel: { customValues: ticks } });
+  });
+
+  it('keeps a whole magnitude whole in the log range', () => {
+    const axis = getBinnedHeatmapYAxis(baseData({ yScale: { type: 'log', log: 10 }, yMin: 1000, yMax: 1000000 }), {});
+    expect(axis).toMatchObject({ min: 1000, max: 1000000 });
+  });
+
   it('leaves a linear range to ECharts unless min/max are set', () => {
     const axis = getBinnedHeatmapYAxis(baseData({ yScale: { type: 'linear' } }), { max: '15000' });
     expect(axis).toMatchObject({ type: 'value', min: undefined, max: 15000 });

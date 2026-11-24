@@ -83,6 +83,29 @@ export function getBinnedHeatmapBucketAxis(
   };
 }
 
+const LOG_EPSILON = 1e-9;
+/** Smallest distance between two Y tick labels, in pixels. */
+const LOG_TICK_MIN_SPACING = 36;
+/** Largest number of Y ticks when the plot height is not known. */
+const LOG_TICK_DEFAULT_COUNT = 8;
+
+/**
+ * The exponents of the ticks of a log axis that goes from `loExp` to `hiExp`.
+ * The ticks are at an equal distance: each exponent is a multiple of one step.
+ * The step is the smallest that keeps the labels `LOG_TICK_MIN_SPACING` apart,
+ * so a base 2 axis of 17 magnitudes in a 370 px plot has a tick for each second
+ * power of 2, as in core.
+ */
+export function logTickExponents(loExp: number, hiExp: number, plotHeight?: number): number[] {
+  const maxTicks = plotHeight ? Math.max(2, Math.floor(plotHeight / LOG_TICK_MIN_SPACING)) : LOG_TICK_DEFAULT_COUNT;
+  const step = Math.max(1, Math.ceil((hiExp - loExp) / maxTicks));
+  const exponents: number[] = [];
+  for (let e = Math.ceil(loExp / step) * step; e <= hiExp; e += step) {
+    exponents.push(e);
+  }
+  return exponents;
+}
+
 /** Parse a core axis bound, which dashboards store as a number or a string. */
 function parseBound(value: number | string | undefined): number | undefined {
   if (value == null || value === '') {
@@ -98,15 +121,18 @@ function parseBound(value: number | string | undefined): number | undefined {
  *
  * - `buckets`: one label per bucket bound (see {@link getBinnedHeatmapBucketAxis}).
  *   Numeric labels take the unit.
- * - `linear` / `log`: a plain value or log axis with auto ticks, as for the
- *   many uniform buckets of a calculated heatmap.
+ * - `linear`: a plain value axis with auto ticks, as for the many uniform
+ *   buckets of a calculated heatmap.
+ * - `log`: a log axis with ticks at an equal distance. `plotHeight` sets how
+ *   many ticks fit (see {@link logTickExponents}).
  *
  * See https://echarts.apache.org/en/option.html#yAxis.type and
  * https://echarts.apache.org/en/option.html#yAxis.inverse
  */
 export function getBinnedHeatmapYAxis(
   data: BinnedHeatmapData,
-  yAxis: CoreHeatmapOptions['yAxis']
+  yAxis: CoreHeatmapOptions['yAxis'],
+  plotHeight?: number
 ): CartesianAxisOption | TimeAxisBaseOption {
   const unit = yAxis?.unit;
   const decimals = yAxis?.decimals;
@@ -130,16 +156,26 @@ export function getBinnedHeatmapYAxis(
   // snaps out to whole magnitudes of the set or data range, as in core.
   const scale = data.yScale;
   if (scale?.type === 'log') {
+    // The small offset keeps a whole magnitude whole: log(1000) / log(10) is 2.9999999999999996.
     const log = (value: number) => Math.log(value) / Math.log(scale.log);
     const lo = explicit.min ?? data.yMin;
     const hi = explicit.max ?? data.yMax;
+    const loExp = lo > 0 ? Math.floor(log(lo) + LOG_EPSILON) : undefined;
+    const hiExp = hi > 0 ? Math.ceil(log(hi) - LOG_EPSILON) : undefined;
+    const ticks =
+      loExp != null && hiExp != null
+        ? logTickExponents(loExp, hiExp, plotHeight).map((e) => scale.log ** e)
+        : undefined;
     return {
       type: 'log',
       logBase: scale.log,
       inverse,
-      axisLabel,
-      min: lo > 0 ? scale.log ** Math.floor(log(lo)) : undefined,
-      max: hi > 0 ? scale.log ** Math.ceil(log(hi)) : undefined,
+      // ECharts picks log ticks at different distances, so the ticks are set here.
+      // https://echarts.apache.org/en/option.html#yAxis.axisLabel.customValues
+      axisLabel: ticks ? { ...axisLabel, customValues: ticks } : axisLabel,
+      ...(ticks ? { axisTick: { customValues: ticks } } : {}),
+      min: loExp != null ? scale.log ** loExp : undefined,
+      max: hiExp != null ? scale.log ** hiExp : undefined,
     };
   }
   if (scale?.type === 'linear') {

@@ -68,7 +68,7 @@ export function buildBinnedHeatmapLegendItems(ctx: ChartContext, calcs: string[]
  */
 export function buildBinnedHeatmapOption(
   ctx: ChartContext<HeatmapSeriesType>,
-  { isGrafanaLegend, plotWidth }: BaseOptionParts
+  { isGrafanaLegend, plotWidth, plotHeight }: BaseOptionParts
 ): EChartBinnedHeatmapOption | null {
   const { theme, options, seriesType, formatValue, timeZone } = ctx;
   const placement = options.heatmapColorScale?.placement ?? 'right';
@@ -111,7 +111,7 @@ export function buildBinnedHeatmapOption(
   // Composite panel: the heatmap cell layer plus optional cartesian overlays (line/bar/scatter).
   // Overlay axes follow the bucket axis (index 0), so shift their indices by 1.
   const series = buildSeries(heatmap, theme, ctx, formatValue, options, cartSeries, overlayAxes);
-  const yAxis = buildYAxisOption(heatmap, axisStyle, options, overlayAxes);
+  const yAxis = buildYAxisOption(heatmap, axisStyle, options, overlayAxes, plotHeight);
   const grid = buildGridOption(isGrafanaLegend, options, overlayAxes, placement);
   const xAxis = buildXAxisOption(heatmap, ctx, axisStyle, plotWidth);
 
@@ -175,14 +175,15 @@ const buildYAxisOption = (
   heatmap: BinnedHeatmapData,
   axisStyle: CartesianAxisOption | TimeAxisBaseOption,
   options: PanelOptions,
-  overlayAxes: CartesianYAxes | undefined
+  overlayAxes: CartesianYAxes | undefined,
+  plotHeight: number | undefined
 ) => {
   // Primary y-axis (index 0): the bucket scale the heatmap cells are drawn against.
   const bucketYAxis = mergeAxisStyle<YAXisOption>(cartesianTimeDefaultOptions.yAxis, axisStyle, {
     min: heatmap.yMin,
     max: heatmap.yMax,
     zlevel: options.zLevel?.axis,
-    ...getBinnedHeatmapYAxis(heatmap, options.yAxis),
+    ...getBinnedHeatmapYAxis(heatmap, options.yAxis, plotHeight),
   });
 
   // https://echarts.apache.org/en/option.html#yAxis
