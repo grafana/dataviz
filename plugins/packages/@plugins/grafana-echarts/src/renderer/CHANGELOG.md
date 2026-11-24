@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.0](https://github.com/grafana/dataviz/compare/grafana-echarts-renderer/v0.7.1...grafana-echarts-renderer/v0.8.0) (2026-11-24)
+
+
+### 🎉 Features
+
+* **echarts:** add Fill below to for cartesian line series ([#121](https://github.com/grafana/dataviz/issues/121)) ([#317](https://github.com/grafana/dataviz/issues/317)) ([f628dee](https://github.com/grafana/dataviz/commit/f628deeb80667f48163033255578b7406bd224d3))
+
+
+### 🐛 Bug Fixes
+
+* **echarts:** draw sparse heatmap-cells frames on a log 2 Y axis ([#304](https://github.com/grafana/dataviz/issues/304)) ([#315](https://github.com/grafana/dataviz/issues/315)) ([d27a636](https://github.com/grafana/dataviz/commit/d27a6364cd323973154baf232152e4c2678af157))
+
 ## [0.7.1](https://github.com/grafana/dataviz/compare/grafana-echarts-renderer/v0.7.0...grafana-echarts-renderer/v0.7.1) (2026-11-24)
 
 
