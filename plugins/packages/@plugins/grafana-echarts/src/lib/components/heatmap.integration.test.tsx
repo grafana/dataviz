@@ -33,6 +33,15 @@ describe('heatmap Y bucket scale for le rows', () => {
     });
     expect(cellHeights(cellRects(seriesEvents))).toHaveLength(1);
   });
+
+  // ECharts reports an option that needs a feature that is not registered, such as axis `breaks` (#180).
+  it('logs no ECharts AxisBreak error for the bucket axis', async () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    await renderHeatmap([leRowsFrame]);
+    const messages = consoleError.mock.calls.map((args) => args.join(' '));
+    consoleError.mockRestore();
+    expect(messages.filter((message) => message.includes('AxisBreak'))).toEqual([]);
+  });
 });
 
 describe('heatmap dense cells (calculate from data output)', () => {

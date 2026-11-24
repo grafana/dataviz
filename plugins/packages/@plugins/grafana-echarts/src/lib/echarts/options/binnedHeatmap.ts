@@ -81,7 +81,9 @@ export function getBinnedHeatmapBucketAxis(
       },
     },
     axisTick: { customValues: labelValues },
-    breaks: rawBuckets,
+    // Do not set `breaks` from the buckets. An axis break collapses its range, and the
+    // buckets fill the full axis, so the cells shrink to one line.
+    // https://echarts.apache.org/en/option.html#yAxis.breaks
   };
 }
 

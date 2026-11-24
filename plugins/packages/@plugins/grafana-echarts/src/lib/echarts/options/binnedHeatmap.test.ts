@@ -44,6 +44,13 @@ describe('getBinnedHeatmapBucketAxis', () => {
     expect(formatter(15)).toBe('+Inf');
   });
 
+  // An axis break collapses its range, so breaks made from the buckets collapse all cells (#180).
+  it('sets no axis breaks', () => {
+    const axis = getBinnedHeatmapBucketAxis(baseData({ yBuckets: [{ start: 0, end: 10, label: '10' }] }));
+
+    expect(axis).not.toHaveProperty('breaks');
+  });
+
   it('places labels at bucket centers for "center" (ordinal) placement', () => {
     const axis = getBinnedHeatmapBucketAxis(
       baseData({
