@@ -9,17 +9,24 @@ import { getCanvasEvents, getComponent, height, width } from 'test/panel';
 // 20 minutes between rows, so the 10 rows fill the 3 h test time range.
 const STEP = 20 * 60_000;
 
-type Series = { name: string; values: Array<number | null>; custom?: Record<string, unknown> };
+/** A series with an `offset` (ms) is in a frame of its own, with times that much later, as a second query. */
+type Series = { name: string; values: Array<number | null>; custom?: Record<string, unknown>; offset?: number };
 
-const renderEvents = async (series: Series[]) => {
-  const frame = toDataFrame({
+const toFrame = (series: Series[], offset = 0) =>
+  toDataFrame({
     fields: [
-      { name: 'time', type: FieldType.time, values: series[0].values.map((_, i) => 1783137094497 + i * STEP) },
+      { name: 'time', type: FieldType.time, values: series[0].values.map((_, i) => 1783137094497 + offset + i * STEP) },
       ...series.map(({ name, values, custom }) => ({ name, type: FieldType.number, values, config: { custom } })),
     ],
   });
+
+const renderEvents = async (series: Series[]) => {
+  const frames = [
+    toFrame(series.filter(({ offset }) => offset == null)),
+    ...series.filter(({ offset }) => offset != null).map((entry) => toFrame([entry], entry.offset)),
+  ];
   const { container } = render(
-    getComponent([frame], 'line', { zLevel: { series: SERIES_ZLEVEL }, animation: { enabled: false } })
+    getComponent(frames, 'line', { zLevel: { series: SERIES_ZLEVEL }, animation: { enabled: false } })
   );
   return getCanvasEvents(container);
 };
@@ -54,6 +61,23 @@ describe('cartesian Fill below to', () => {
         values: [20, 23, 27, 25, 28, 31, null, 26, 24, 27],
         custom: { lineInterpolation: 'smooth' },
       },
+    ]);
+    expect(normalizeCanvasEvents(seriesEvents)).toMatchCanvasSnapshot(defaultEvents, { width, height });
+  });
+
+  it('follows the two lines when the target is a second query with times 8 minutes later', async () => {
+    const { defaultEvents, seriesEvents } = await renderEvents([
+      { name: 'max', values: [40, 46, 52, 48, 55, 61, 58, 50, 47, 53], custom: { fillBelowTo: 'min' } },
+      { name: 'min', values: [20, 33, 22, 35, 24, 37, 26, 39, 28, 30], offset: 8 * 60_000 },
+    ]);
+    expect(normalizeCanvasEvents(seriesEvents)).toMatchCanvasSnapshot(defaultEvents, { width, height });
+  });
+
+  it('steps the band with step after lines that cross', async () => {
+    const step = { lineInterpolation: 'stepAfter' };
+    const { defaultEvents, seriesEvents } = await renderEvents([
+      { name: 'a', values: [10, 18, 26, 34, 40, 44, 32, 16, 12, 30], custom: { ...step, fillBelowTo: 'b' } },
+      { name: 'b', values: [30, 30, 28, 26, 24, 22, 26, 30, 32, 28], custom: step },
     ]);
     expect(normalizeCanvasEvents(seriesEvents)).toMatchCanvasSnapshot(defaultEvents, { width, height });
   });

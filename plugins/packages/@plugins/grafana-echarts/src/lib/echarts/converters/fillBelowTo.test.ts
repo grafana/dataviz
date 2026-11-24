@@ -42,7 +42,7 @@ describe('resolveFillBelowTo', () => {
     ]);
   });
 
-  it('has no target for an unknown name, an empty name or the series itself', () => {
+  it('gives null for a target that the data does not have: an unknown name or the series itself', () => {
     const frames = [
       frame([
         { name: 'a', fillBelowTo: 'x' },
@@ -50,7 +50,8 @@ describe('resolveFillBelowTo', () => {
         { name: 'c', fillBelowTo: 'c' },
       ]),
     ];
-    expect(resolveFillBelowTo(frames)).toEqual([undefined, undefined, undefined]);
+    // An empty name is no "Fill below to".
+    expect(resolveFillBelowTo(frames)).toEqual([null, undefined, null]);
   });
 });
 
@@ -105,27 +106,104 @@ describe('applyFillBelowTo', () => {
     expect(band.areaStyle).toEqual({ color: 'red', opacity: 0.6 });
   });
 
-  it('gives the band the axis and the line shape of the source', () => {
-    const shape = { yAxisIndex: 1, zlevel: 3, connectNulls: true, step: 'end' as const };
-    const [, , base, band] = applyFillBelowTo([line([5, 6], shape), line([2, 4])], [1, undefined]);
-    expect(base).toMatchObject(shape);
-    expect(band).toMatchObject(shape);
+  it('gives the band the axis and the line shape of the source, and no sampling', () => {
+    const shape = { yAxisIndex: 1, zlevel: 3, smooth: true, smoothMonotone: 'x' as const };
+    const source = line([5, 6], { ...shape, sampling: 'lttb' });
+    const [, , base, band] = applyFillBelowTo([source, line([2, 4], { yAxisIndex: 1 })], [1, undefined]);
+    for (const hidden of [base, band] as LineSeriesOption[]) {
+      expect(hidden).toMatchObject(shape);
+      expect(hidden.sampling).toBeUndefined();
+    }
   });
 
-  it('aligns the target on the x values of the source', () => {
-    const target: LineSeriesOption = { type: 'line', data: [{ value: [2, 10] }, [0, 20]] };
-    const [, , base] = applyFillBelowTo([line([5, 6, 7]), target], [1, undefined]) as LineSeriesOption[];
+  // Two queries have their own times. Core joins the frames, so the band follows the two lines.
+  it('follows the two lines when the series have different x values', () => {
+    const target: LineSeriesOption = { type: 'line', data: [{ value: [2.5, 10] }, [0.5, 20], [1.5, 0]] };
+    const [, , base, band] = applyFillBelowTo([line([25, 25, 25, 25]), target], [1, undefined]) as LineSeriesOption[];
+    // A point at each x of the two series. No value before the first point of the target (x 0) and
+    // after its last point (x 3). The target is on its segment at the x values of the source.
     expect(base.data).toEqual([
-      [0, 20],
-      [1, null],
-      [2, 10],
+      [0, null],
+      [0.5, 20],
+      [1, 10],
+      [1.5, 0],
+      [2, 5],
+      [2.5, 10],
+      [3, null],
+    ]);
+    expect(band.data).toEqual([
+      [0, null],
+      [0.5, 5],
+      [1, 15],
+      [1.5, 25],
+      [2, 20],
+      [2.5, 15],
+      [3, null],
     ]);
   });
 
-  it('adds no band for a source that is not a line, or for a stacked source or target', () => {
+  it('breaks the band at a null of the target, and not at a null that the line connects', () => {
+    const source = line([9, 9, 9]);
+    const base = (target: LineSeriesOption) =>
+      (applyFillBelowTo([source, target], [1, undefined]) as LineSeriesOption[])[2].data;
+    expect(base(line([1, null, 3]))).toEqual([
+      [0, 1],
+      [1, null],
+      [2, 3],
+    ]);
+    expect(base(line([1, null, 3], { connectNulls: true }))).toEqual([
+      [0, 1],
+      [1, 2],
+      [2, 3],
+    ]);
+  });
+
+  it('holds the value of a stepped line between its points, with no crossing point', () => {
+    // The source steps at the end of a segment: 1 until x 2, then 9. The target is 5 at x 1.
+    const source = line([1, null, 9], { step: 'end', connectNulls: true });
+    const target: LineSeriesOption = {
+      type: 'line',
+      step: 'end',
+      data: [
+        [0, 5],
+        [1, 5],
+        [2, 5],
+      ],
+    };
+    const [, , base, band] = applyFillBelowTo([source, target], [1, undefined]) as LineSeriesOption[];
+    expect(base.data).toEqual([
+      [0, 5],
+      [1, 5],
+      [2, 5],
+    ]);
+    expect(band.data).toEqual([
+      [0, 0],
+      [1, 0],
+      [2, 4],
+    ]);
+    expect(band.step).toBe('end');
+  });
+
+  it('removes the fill of a source whose target is not in the data, as core', () => {
+    const series = [line([5, 6], { areaStyle: { opacity: 0.4 } }), line([2, 4])];
+    const result = applyFillBelowTo(series, [null, undefined]) as LineSeriesOption[];
+    expect(result).toHaveLength(2);
+    expect(result[0].areaStyle).toBeUndefined();
+  });
+
+  it('adds no band, and keeps the fill, where the chart cannot draw the band', () => {
+    const fill = { areaStyle: { opacity: 0.4 } };
     const bar = { type: 'bar' as const, data: [[0, 1]] };
     expect(applyFillBelowTo([bar, line([1])], [1, undefined])).toHaveLength(2);
-    expect(applyFillBelowTo([line([1], { stack: 's' }), line([1])], [1, undefined])).toHaveLength(2);
-    expect(applyFillBelowTo([line([1]), line([1], { stack: 's' })], [1, undefined])).toHaveLength(2);
+    // A source or a target in a stack, and a target on another y-axis.
+    for (const [source, target] of [
+      [line([1], { ...fill, stack: 's' }), line([1])],
+      [line([1], fill), line([1], { stack: 's' })],
+      [line([1], fill), line([1], { yAxisIndex: 1 })],
+    ]) {
+      const result = applyFillBelowTo([source, target], [1, undefined]) as LineSeriesOption[];
+      expect(result).toHaveLength(2);
+      expect(result[0].areaStyle).toEqual(fill.areaStyle);
+    }
   });
 });

@@ -9,16 +9,30 @@ import { getCanvasEvents, getComponent } from 'test/panel';
 
 const START = 1783137094497;
 
-const seriesEvents = async (maxCustom: Record<string, unknown>, minCustom: Record<string, unknown> = {}) => {
-  const frame = toDataFrame({
-    fields: [
-      { name: 'time', type: FieldType.time, values: [0, 1, 2, 3].map((i) => START + i * 30 * 60_000) },
-      { name: 'max', type: FieldType.number, values: [5, 7, 6, 8], config: { custom: maxCustom } },
-      { name: 'min', type: FieldType.number, values: [1, 3, 2, 4], config: { custom: minCustom } },
-    ],
-  });
+const STEP = 30 * 60_000;
+const times = (offset = 0) => ({
+  name: 'time',
+  type: FieldType.time,
+  values: [0, 1, 2, 3].map((i) => START + offset + i * STEP),
+});
+
+/**
+ * The series layer of a `max` and a `min` series. With `minOffset`, `min` is in a frame of its own,
+ * with times that many ms after the times of `max`, as a second query.
+ */
+const seriesEvents = async (
+  maxCustom: Record<string, unknown>,
+  minCustom: Record<string, unknown> = {},
+  minOffset?: number
+) => {
+  const max = { name: 'max', type: FieldType.number, values: [5, 7, 6, 8], config: { custom: maxCustom } };
+  const min = { name: 'min', type: FieldType.number, values: [1, 3, 2, 4], config: { custom: minCustom } };
+  const frames =
+    minOffset == null
+      ? [toDataFrame({ fields: [times(), max, min] })]
+      : [toDataFrame({ fields: [times(), max] }), toDataFrame({ fields: [times(minOffset), min] })];
   const { container, unmount } = render(
-    getComponent([frame], 'line', {
+    getComponent(frames, 'line', {
       zLevel: { series: SERIES_ZLEVEL },
       animation: { enabled: false },
       performance: { showPoints: 'never' },
@@ -29,7 +43,24 @@ const seriesEvents = async (maxCustom: Record<string, unknown>, minCustom: Recor
   return events;
 };
 
-const fills = (events: Array<{ type: string }>) => events.filter((event) => event.type === 'fill').length;
+/**
+ * The fills that have a shape: a `fill` call on a path (from its `beginPath`) with a `lineTo`. A band
+ * with no value makes a `fill` call on an empty path, which draws nothing.
+ */
+const fills = (events: Array<{ type: string }>) => {
+  let total = 0;
+  let hasLine = false;
+  for (const { type } of events) {
+    if (type === 'beginPath') {
+      hasLine = false;
+    } else if (type === 'lineTo') {
+      hasLine = true;
+    } else if (type === 'fill' && hasLine) {
+      total++;
+    }
+  }
+  return total;
+};
 
 describe('cartesian Fill below to', () => {
   it('draws one fill between the series and its target', async () => {
@@ -51,5 +82,17 @@ describe('cartesian Fill below to', () => {
 
   it('draws no fill for a target that the data does not have', async () => {
     expect(await seriesEvents({ fillBelowTo: 'unknown' })).toEqual(await seriesEvents({}));
+  });
+
+  // Core sets the fill opacity to 0 when it cannot make the band (`preparePlotConfigBuilder`).
+  it('removes the fill to the axis for a target that the data does not have', async () => {
+    expect(fills(await seriesEvents({ fillOpacity: 40 }))).toBe(1);
+    expect(await seriesEvents({ fillBelowTo: 'unknown', fillOpacity: 40 })).toEqual(await seriesEvents({}));
+  });
+
+  // Two queries: the times of the target are 30 s after the times of the series, so no time is equal.
+  it('draws one band to a target in another frame with different times', async () => {
+    expect(fills(await seriesEvents({}, {}, 30_000))).toBe(0);
+    expect(fills(await seriesEvents({ fillBelowTo: 'min' }, {}, 30_000))).toBe(1);
   });
 });
