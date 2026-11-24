@@ -52,24 +52,31 @@ const toColorScheme = (scheme: unknown): HeatmapColorScheme | undefined =>
     : undefined;
 
 /**
- * The `heatmapColorScale.placement` for the core `legend.show`. The legend of core Heatmap is the color scale,
- * and core draws it below the chart. The Grafana legend of the ECharts Heatmap is for the overlay series only,
- * so the handler does not copy `legend`.
+ * The `heatmapColorScale.placement` for the core `legend`. The legend of core Heatmap is the color scale, and
+ * core draws it below the chart (the default) or on the right. The Grafana legend of the ECharts Heatmap is for
+ * the overlay series only, so the handler does not copy `legend`.
  */
 const toColorScalePlacement = (legend: unknown): HeatmapColorScalePlacement | undefined => {
   if (!isObject(legend) || typeof legend.show !== 'boolean') {
     return undefined;
   }
-  return legend.show ? 'bottom' : 'none';
+  if (!legend.show) {
+    return 'none';
+  }
+  return legend.placement === 'right' ? 'right' : 'bottom';
 };
 
 /**
  * The options after a change from `prevPluginId`. For core Heatmap, it gives the core options that the ECharts
  * Heatmap reads. For each other type, it changes nothing. It does not change the field config: core Heatmap has
  * no field option that the cells of the ECharts Heatmap read.
+ *
+ * Scenes replaces the options of the panel with a result that is not empty. So the result starts from
+ * `panel.options`: the options that Grafana cached for this panel type, and the options of a suggestion.
+ * https://github.com/grafana/scenes/blob/main/packages/scenes/src/components/VizPanel/VizPanel.tsx
  */
 export function heatmapPanelChangeHandler(
-  _panel: PanelModel,
+  panel: PanelModel,
   prevPluginId: string,
   prevOptions: Record<string, unknown>
 ): Record<string, unknown> {
@@ -80,6 +87,7 @@ export function heatmapPanelChangeHandler(
   const scheme = toColorScheme(isObject(prevOptions.color) ? prevOptions.color.scheme : undefined);
   const placement = toColorScalePlacement(prevOptions.legend);
   return {
+    ...(isObject(panel.options) ? panel.options : {}),
     ...keepSamePathOptions(prevOptions),
     ...(scheme === undefined ? {} : { heatmapColorScheme: scheme }),
     ...(placement === undefined ? {} : { heatmapColorScale: { placement } }),
