@@ -2,7 +2,7 @@
 import { type RenderState } from '@grafana/viz-contract/renderer-api';
 import fs from 'node:fs';
 import path from 'node:path';
-import { PANEL_IDS, PANEL_TYPES_NOT_IN_PACKAGE } from '../renderer/registry';
+import { PANEL_IDS } from '../renderer/registry';
 
 /** The `fixtures/` directory of the contract package. */
 export const FIXTURES_DIR = path.join(path.dirname(require.resolve('@grafana/viz-contract/package.json')), 'fixtures');
@@ -18,23 +18,18 @@ export const allFixtureSets = (): string[] =>
 export const fixtureSpec = (set: string): Record<string, unknown> =>
   JSON.parse(fs.readFileSync(path.join(FIXTURES_DIR, set, 'spec.json'), 'utf8'));
 
-/** True when the set has a `spec.json` for a panel type that this package does not have. The tests leave it out. */
-const isForMissingPanel = (set: string): boolean => {
-  if (!fs.existsSync(path.join(FIXTURES_DIR, set, 'spec.json'))) {
-    return false;
-  }
-  const panel = fixtureSpec(set).panel as { type?: unknown } | undefined;
-  return typeof panel?.type === 'string' && PANEL_TYPES_NOT_IN_PACKAGE.has(panel.type);
-};
+/** The Renderer sets, sorted: a set is a Renderer set when it has a `state.json` (`fixtures.10`). */
+export const fixtureSets = (): string[] =>
+  allFixtureSets().filter((name) => fs.existsSync(path.join(FIXTURES_DIR, name, 'state.json')));
 
 /**
- * The Renderer sets, sorted: a set is a Renderer set when it has a `state.json` (`fixtures.10`). The sets for a
- * panel type of `PANEL_TYPES_NOT_IN_PACKAGE` are not in the list.
+ * The viz spec that the Source makes from a pick set: the panel and the data of its `result.json`. A pick set has
+ * no `spec.json`.
  */
-export const fixtureSets = (): string[] =>
-  allFixtureSets().filter(
-    (name) => fs.existsSync(path.join(FIXTURES_DIR, name, 'state.json')) && !isForMissingPanel(name)
-  );
+export const fixturePickedSpec = (set: string): Record<string, unknown> => {
+  const { panel, data } = JSON.parse(fs.readFileSync(path.join(FIXTURES_DIR, set, 'result.json'), 'utf8'));
+  return { specVersion: 1, panel, data };
+};
 
 /** The list of panel types at the end of the `unsupported-panel-type` message of `states.json`. */
 const SUPPORTED_TYPES = /Supported types: .*\.$/;
@@ -42,9 +37,8 @@ const SUPPORTED_TYPES = /Supported types: .*\.$/;
 /**
  * The `state.json` of a set, with one correction: the `unsupported-panel-type` message lists the panel types that
  * this package draws (`PANEL_IDS`). The set of contract 1.11.0 lists the panel types of contract 1.7.0, with no
- * gauge and no stat (https://github.com/grafana/viz-contract/issues/94), and this package has no stat panel
- * (`PANEL_TYPES_NOT_IN_PACKAGE`). Remove the correction when
- * the set and `PANEL_IDS` list the same panel types.
+ * gauge and no stat (https://github.com/grafana/viz-contract/issues/94). Remove the correction when the set and
+ * `PANEL_IDS` list the same panel types.
  */
 export const fixtureState = (set: string): RenderState => {
   const state: RenderState = JSON.parse(fs.readFileSync(path.join(FIXTURES_DIR, set, 'state.json'), 'utf8'));

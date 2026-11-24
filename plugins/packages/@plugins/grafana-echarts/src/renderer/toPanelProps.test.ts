@@ -197,13 +197,15 @@ describe('preparePanel: the series-truncated cut', () => {
   });
 
   // contract-rule: state.19
-  it('cuts the gauge panel to 50 number fields: one gauge for each', () => {
-    const gauge = PANELS['grafana-echartsgauge-panel'];
-    const { props, omittedSeries } = preparePanel(wide('grafana-echartsgauge-panel', 53), gauge);
+  it.each([
+    ['gauge', 'grafana-echartsgauge-panel'],
+    ['stat', 'grafana-echartsstat-panel'],
+  ])('cuts the %s panel to 50 number fields: one value for each', (_name, type) => {
+    const { props, omittedSeries } = preparePanel(wide(type, 53), PANELS[type]);
     expect(omittedSeries).toBe(3);
     const numbers = props.data.series[0].fields.filter((field) => field.type === FieldType.number);
     expect(numbers).toHaveLength(50);
-    expect(preparePanel(wide('grafana-echartsgauge-panel', 10), gauge).omittedSeries).toBe(0);
+    expect(preparePanel(wide(type, 10), PANELS[type]).omittedSeries).toBe(0);
   });
 
   // contract-rule: state.19

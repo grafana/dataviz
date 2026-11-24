@@ -4,11 +4,11 @@ import { type DataFrame, FieldType } from '@grafana/data';
 
 /**
  * The families that raise `series-truncated`. Their charts draw one series for each number field. For the gauge
- * family, a number field is one gauge when the panel reduces the field with a calculation. With all values
- * (`reduceOptions.values`), each row is one gauge, and the cut does not count the rows: the `limit` option of the
- * panel sets their number.
+ * family and the stat family, a number field is one gauge or one stat cell when the panel reduces the field with a
+ * calculation. With all values (`reduceOptions.values`), each row is one gauge or one cell, and the cut does not
+ * count the rows: the `limit` option of the panel sets their number.
  */
-export const TRUNCATED_FAMILIES = new Set(['cartesian', 'gauge', 'stream']);
+export const TRUNCATED_FAMILIES = new Set(['cartesian', 'gauge', 'stat', 'stream']);
 
 /**
  * Keeps the first `max` number fields (series) of the frames, and every field that is not a number field. A frame

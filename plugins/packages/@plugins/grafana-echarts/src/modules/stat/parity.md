@@ -7,6 +7,11 @@ The option names, values and defaults are the ones of core Stat
 ([panelcfg.cue](https://github.com/grafana/grafana/blob/main/public/app/plugins/panel/stat/panelcfg.cue)), so a
 panel keeps its options when it changes type.
 
+The Renderer draws the panel (`src/renderer/panels.ts`). The Renderer keeps the first 50 number fields, and gives
+the `series-truncated` notice for more. With a calculation, each number field is one cell, so the Renderer shows
+50 cells at most. With all values (`reduceOptions.values`), each row is one cell, and only the `limit` option
+sets the number of cells: the Renderer does not cut the rows.
+
 Demo dashboard: the [stat basics dashboard][db-basics]. Each row has the ECharts panel at the left and the
 core panel at the right, with the same data and options.
 
