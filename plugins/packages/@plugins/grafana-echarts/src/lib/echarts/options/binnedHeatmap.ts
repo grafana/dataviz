@@ -149,7 +149,10 @@ export function getBinnedHeatmapYAxis(
   if (max != null) {
     explicit.max = max;
   }
-  const axisLabel = { formatter: (value: number) => formatNumber(value) };
+  // A log tick is a power, and `10 ** -4` is 0.00009999999999999999 in some Node
+  // versions and 0.0001 in others. 12 significant digits remove that difference
+  // from the labels, and from the label width that ECharts measures.
+  const axisLabel = { formatter: (value: number) => formatNumber(Number(value.toPrecision(12))) };
 
   // A linear scale takes ECharts' auto range unless set, like core's uPlot
   // scale; `undefined` replaces the data range the caller sets. A log range

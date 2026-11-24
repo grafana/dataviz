@@ -109,6 +109,16 @@ describe('getBinnedHeatmapYAxis', () => {
     expect(axis).toMatchObject({ axisLabel: { customValues: ticks } });
   });
 
+  it('formats a log tick the same with and without float noise', () => {
+    // `10 ** -4` is 0.00009999999999999999 in some Node versions, which gave "100.0 µs" for "100 µs".
+    const axis = getBinnedHeatmapYAxis(baseData({ yScale: { type: 'log', log: 10 }, yMin: 0.00002, yMax: 0.5 }), {
+      unit: 's',
+    });
+    const format = (axis.axisLabel as { formatter: (value: number) => string }).formatter;
+    expect(format(0.00009999999999999999)).toBe('100 µs');
+    expect(format(0.0001)).toBe('100 µs');
+  });
+
   it('keeps a whole magnitude whole in the log range', () => {
     const axis = getBinnedHeatmapYAxis(baseData({ yScale: { type: 'log', log: 10 }, yMin: 1000, yMax: 1000000 }), {});
     expect(axis).toMatchObject({ min: 1000, max: 1000000 });
