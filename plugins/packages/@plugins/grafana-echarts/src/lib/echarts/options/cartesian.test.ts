@@ -320,7 +320,7 @@ describe('getCartesianAreaStyle', () => {
 // https://github.com/grafana/grafana/blob/main/packages/grafana-ui/src/components/uPlot/config/UPlotSeriesBuilder.ts
 describe('getLineGradientColors', () => {
   const color = '#73bf69';
-  /** A gradient from the top to the bottom of the plot, in fractions of the plot. */
+  /** A gradient from the top to the bottom of the plot, in fractions of the plot, with the mark of the hook. */
   const plotGradient = (colorStops: unknown) => ({
     type: 'linear',
     x: 0,
@@ -329,6 +329,7 @@ describe('getLineGradientColors', () => {
     y2: 1,
     colorStops,
     global: false,
+    plotGradient: true,
   });
 
   it.each([GraphGradientMode.None, GraphGradientMode.Scheme, undefined])(

@@ -8,27 +8,23 @@ import { registerUpdateLifecycle } from 'echarts/core';
 // ECharts: https://echarts.apache.org/en/option.html#color
 
 /**
+ * A gradient of `getPlotGradient`. The `plotGradient` key marks it. ECharts keeps the key when it copies an option,
+ * so the hook finds the gradient again on each update. A linear gradient with no key is not changed.
+ */
+export interface PlotGradient extends LinearGradientObject {
+  plotGradient: true;
+}
+
+/**
  * A vertical gradient from the top (offset 0) to the bottom (offset 1) of the plot. The coordinates are fractions
  * of the plot area. `registerLinePlotGradients` changes them to px of the canvas before a line series draws.
  */
-export function getPlotGradient(colorStops: LinearGradientObject['colorStops']): LinearGradientObject {
-  return { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops, global: false };
+export function getPlotGradient(colorStops: LinearGradientObject['colorStops']): PlotGradient {
+  return { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops, global: false, plotGradient: true };
 }
 
-/** The gradient in fractions of the plot, for each gradient in px that this file made. A resize reads it again. */
-const plotGradients = new WeakMap<LinearGradientObject, LinearGradientObject>();
-
-/** The gradient in fractions of the plot, or `undefined` when `color` is not a gradient of `getPlotGradient`. */
-function toPlotGradient(color: unknown): LinearGradientObject | undefined {
-  if (!isLinearGradient(color)) {
-    return undefined;
-  }
-  // A gradient that is not `global` comes from a new option. A `global` gradient is known only if this file made it.
-  return color.global ? plotGradients.get(color) : color;
-}
-
-function isLinearGradient(color: unknown): color is LinearGradientObject {
-  return typeof color === 'object' && color !== null && 'type' in color && color.type === 'linear';
+function isPlotGradient(color: unknown): color is PlotGradient {
+  return typeof color === 'object' && color !== null && 'plotGradient' in color && color.plotGradient === true;
 }
 
 /** The style objects of a line series option that can have a gradient color. */
@@ -52,17 +48,15 @@ export function registerLinePlotGradients(): void {
       // A copy of the keys only: each style is the object of the series option, so the color below changes the option.
       const option: Record<string, unknown> = { ...seriesModel.option };
       for (const style of [option.lineStyle, option.areaStyle]) {
-        const gradient = isColorStyle(style) ? toPlotGradient(style.color) : undefined;
-        if (isColorStyle(style) && gradient) {
-          const sized: LinearGradientObject = {
-            ...gradient,
-            x: plot.x + gradient.x * plot.width,
-            y: plot.y + gradient.y * plot.height,
-            x2: plot.x + gradient.x2 * plot.width,
-            y2: plot.y + gradient.y2 * plot.height,
+        if (isColorStyle(style) && isPlotGradient(style.color)) {
+          const sized: PlotGradient = {
+            ...style.color,
+            x: plot.x,
+            y: plot.y,
+            x2: plot.x,
+            y2: plot.y + plot.height,
             global: true,
           };
-          plotGradients.set(sized, gradient);
           style.color = sized;
         }
       }
