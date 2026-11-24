@@ -70,7 +70,10 @@ difference to the source with the fill. With no Fill opacity, the band uses 35, 
 where the two series have a value at the same time, and a fill only where the source is above the target. A series in a stack, a series on a category axis and a bar or
 point series get no band. Dashboard:
 [cartesian-fill-below-to.json](../../../../provisioning/dashboards/cartesian/cartesian-fill-below-to.json) (ECharts
-and core pairs). Tests: `fill-below-to.integration.test.tsx`, `fillBelowTo.test.ts`.
+and core pairs). Tests: `fill-below-to.canvas.test.tsx`, `fill-below-to.integration.test.tsx`, `fillBelowTo.test.ts`.
+
+With smooth lines, a null in one of the two series starts a new piece of the band. The curve of that piece can be a
+small distance from the curve of the line, because ECharts makes the curve from the points of the piece only.
 
 On a time axis, line and area series stack as in core Time series (`preparePlotData2`), in a group apart from the
 bars. A null in one line, at a row where another line of the stack has a value, adds 0: the line draws on the line
