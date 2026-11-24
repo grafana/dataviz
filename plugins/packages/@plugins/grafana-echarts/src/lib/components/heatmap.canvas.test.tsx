@@ -1,5 +1,5 @@
 import { normalizeCanvasEvents } from 'test/canvas';
-import { denseCellsFrame, leRowsFrame, renderHeatmap } from 'test/heatmapCanvas';
+import { denseCellsFrame, leRowsFrame, renderHeatmap, sparseCellsFrame } from 'test/heatmapCanvas';
 import { height, width } from 'test/panel';
 import { type PanelOptions } from 'types';
 
@@ -41,6 +41,25 @@ describe('heatmap core parity canvas', () => {
 
     it('log2 Y axis', async () => {
       const { cells, context } = await renderCells([denseCellsFrame(2)], {});
+      expect(cells).toMatchCanvasSnapshot(context, { width, height });
+    });
+  });
+
+  describe('sparse cells (Prometheus native histogram)', () => {
+    it('log2 Y axis by default', async () => {
+      const { cells, context } = await renderCells([sparseCellsFrame()], {});
+      expect(cells).toMatchCanvasSnapshot(context, { width, height });
+    });
+
+    it('log2 Y axis with a zero bucket', async () => {
+      const { cells, context } = await renderCells([sparseCellsFrame(true)], {});
+      expect(cells).toMatchCanvasSnapshot(context, { width, height });
+    });
+
+    it('linear Y bucket scale', async () => {
+      const { cells, context } = await renderCells([sparseCellsFrame()], {
+        rowsFrame: { yBucketScale: { type: 'linear' } },
+      });
       expect(cells).toMatchCanvasSnapshot(context, { width, height });
     });
   });

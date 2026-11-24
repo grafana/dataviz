@@ -25,7 +25,7 @@ can be styled; those options are meaningless for the heatmap cells themselves.
 | Calculate from data + bucket calculation (`calculate`, `calculation`) | Core's own `heatmap` transformer from the host registry ([calculate.ts](../../lib/grafana/heatmap/calculate.ts)). Absent in the standalone renderer, which draws the raw rows.                         | Supported                 |
 | Y axis: unit, decimals, min, max, reverse (`yAxis.*`)                 | Same paths. A log range snaps out to whole magnitudes, as in core.                                                                                                                                     | Supported                 |
 | Y axis: placement, width, label                                       | none                                                                                                                                                                                                   | Not supported             |
-| Y bucket scale (`rowsFrame.yBucketScale`)                             | Auto (equal-height `le` rows; log 2 for sparse cells), Linear, Log. A dense `heatmap-cells` frame keeps its own scale.                                                                                 | Supported                 |
+| Y bucket scale (`rowsFrame.yBucketScale`)                             | Auto (equal-height `le` rows; log 2 for sparse cells), Linear, Log. A sparse log axis starts at the smallest lower bound above 0. A dense `heatmap-cells` frame keeps its own scale.                   | Supported                 |
 | Y axis: tick alignment (`rowsFrame.layout`)                           | none                                                                                                                                                                                                   | Not supported             |
 | Colors: mode (Scheme/Opacity), fill, scale, exponent (`color.*`)      | Same paths. As in core, scale and exponent apply to opacity mode only.                                                                                                                                 | Supported                 |
 | Colors: steps, reverse                                                | none                                                                                                                                                                                                   | Not supported             |
@@ -44,9 +44,7 @@ can be styled; those options are meaningless for the heatmap cells themselves.
 
 The supported core options use core's own option paths, so the options of a
 panel switched from core Grafana's heatmap stay. The comparison dashboards are
-`provisioning/dashboards/heatmap-core-parity-*.json` (TestData),
-`provisioning/dashboards/heatmap-sparse-cells.json` (TestData, the frame shape
-of a Prometheus native histogram) and
+`provisioning/dashboards/heatmap-core-parity-*.json` (TestData) and
 `lgtm/provisioning/dashboards/heatmap-core-parity-prometheus.json` (Prometheus).
 
 ## Standard (field-config) options

@@ -64,6 +64,32 @@ export const denseCellsFrame = (log?: number) => {
   });
 };
 
+/**
+ * Sparse heatmap-cells in the shape of a Prometheus native histogram: an
+ * `xMax` time and both Y bounds per cell. The buckets double from 0.5 to 8.
+ * `zeroBucket` adds a bucket from -0.5 to 0.5 (the zero bucket) and a bucket
+ * from -1 to -0.5.
+ */
+export const sparseCellsFrame = (zeroBucket = false) => {
+  const bounds = [0.5, 1, 2, 4].map((lower) => [lower, lower * 2]);
+  if (zeroBucket) {
+    bounds.unshift([-1, -0.5], [-0.5, 0.5]);
+  }
+  return toDataFrame({
+    meta: { type: DataFrameType.HeatmapCells },
+    fields: [
+      { name: 'xMax', type: FieldType.time, values: times.flatMap((t) => bounds.map(() => t)) },
+      { name: 'yMin', type: FieldType.number, values: times.flatMap(() => bounds.map(([lower]) => lower)) },
+      { name: 'yMax', type: FieldType.number, values: times.flatMap(() => bounds.map(([, upper]) => upper)) },
+      {
+        name: 'count',
+        type: FieldType.number,
+        values: times.flatMap((_, column) => bounds.map((__, row) => 1 + ((column * 3 + row * 2) % 9))),
+      },
+    ],
+  });
+};
+
 type CanvasEvent = { type: string; props?: Record<string, unknown> };
 export interface CellRect {
   x: number;

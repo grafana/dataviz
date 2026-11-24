@@ -1,4 +1,12 @@
-import { cellHeights, cellRects, denseCellsFrame, largestCell, leRowsFrame, renderHeatmap } from 'test/heatmapCanvas';
+import {
+  cellHeights,
+  cellRects,
+  denseCellsFrame,
+  largestCell,
+  leRowsFrame,
+  renderHeatmap,
+  sparseCellsFrame,
+} from 'test/heatmapCanvas';
 
 // Heatmap core-parity claims, stated as counts and as differences between two
 // renders. No baselines here: the drawn geometry is pinned next door in
@@ -33,6 +41,30 @@ describe('heatmap dense cells (calculate from data output)', () => {
   it('draws doubling buckets at one height on a log2 axis', async () => {
     const { seriesEvents } = await renderHeatmap([denseCellsFrame(2)]);
     expect(cellHeights(cellRects(seriesEvents))).toHaveLength(1);
+  });
+});
+
+describe('heatmap sparse cells (Prometheus native histogram)', () => {
+  it('draws doubling buckets at one height by default (core log 2)', async () => {
+    const { seriesEvents } = await renderHeatmap([sparseCellsFrame()]);
+    const rects = cellRects(seriesEvents);
+    expect(rects).toHaveLength(12);
+    expect(cellHeights(rects)).toHaveLength(1);
+  });
+
+  it('draws doubling buckets at growing heights on a linear Y bucket scale', async () => {
+    const { seriesEvents } = await renderHeatmap([sparseCellsFrame()], {
+      rowsFrame: { yBucketScale: { type: 'linear' } },
+    });
+    expect(cellHeights(cellRects(seriesEvents)).length).toBeGreaterThan(1);
+  });
+
+  it('keeps the log scale with a zero bucket, and draws only the buckets above 0', async () => {
+    const { seriesEvents } = await renderHeatmap([sparseCellsFrame(true)]);
+    const rects = cellRects(seriesEvents);
+    // Four of the six buckets in each of the three columns, as in core.
+    expect(rects).toHaveLength(12);
+    expect(cellHeights(rects)).toHaveLength(1);
   });
 });
 

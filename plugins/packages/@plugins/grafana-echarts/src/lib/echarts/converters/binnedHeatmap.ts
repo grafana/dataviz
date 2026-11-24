@@ -335,7 +335,7 @@ function denseBucketBounds(values: number[], edge: 'min' | 'max', logBase?: numb
  * A dense `yMin`/`yMax` frame (for example the output of core's heatmap
  * calculation) gets a numeric Y scale, log when the field config says so.
  * A sparse frame (for example a Prometheus native histogram) gets a log 2
- * scale, unless `rowsScale` sets a different scale. See `sparseYScale`.
+ * scale, unless `rowsScale` sets a different scale. See `sparseLogScale`.
  * The first value field that isn't an axis-bound field is the displayed value.
  * See https://grafana.com/developers/dataplane/heatmap#heatmap-cells
  */
@@ -374,6 +374,8 @@ function cellsToCells(
     ? denseBucketBounds(yEdgeField.values, yEdgeField === yMin ? 'min' : 'max', yLog)
     : undefined;
 
+  const sparseLog = yMin && yMax ? sparseLogScale(yMin, rowsScale) : undefined;
+
   const cells: BinnedHeatmapCell[] = [];
   // Distinct Y bucket bounds (cells repeat the same row across X), keyed to
   // dedupe so the bucket axis gets one label per row.
@@ -406,6 +408,14 @@ function cellsToCells(
       ys = yMin ? Number(yMin.values[i]) : yCenter ? Number(yCenter.values[i]) - yStep / 2 : i;
       ye = yMax ? Number(yMax.values[i]) : yCenter ? Number(yCenter.values[i]) + yStep / 2 : i + 1;
     }
+    if (sparseLog && !(ys > 0)) {
+      // A log scale has no 0. As in core, a bucket with a lower bound of 0 or
+      // less starts at the bottom of the axis. It is not drawn when it ends there.
+      if (!(ye > sparseLog.floor)) {
+        continue;
+      }
+      ys = sparseLog.floor;
+    }
     const raw = valueField.values[i];
     const value = typeof raw === 'number' ? raw : null;
 
@@ -424,36 +434,43 @@ function cellsToCells(
   let yScale: BinnedHeatmapYScale | undefined;
   if (denseY) {
     yScale = yLog ? { type: 'log', log: yLog } : { type: 'linear' };
-  } else if (yMin && yMax) {
-    yScale = sparseYScale(buckets, rowsScale);
+  } else if (sparseLog) {
+    yScale = { type: 'log', log: sparseLog.base };
+  } else if (yMin && yMax && rowsScale.type === 'linear') {
+    yScale = { type: 'linear' };
   }
 
   return { cells, buckets, labelsAtBounds: true, valueField, yScale };
 }
 
-/** Log base of a sparse heatmap-cells frame, as in core Grafana. */
+/** Default log base of a sparse heatmap-cells frame, as in core Grafana. */
 const SPARSE_LOG_BASE = 2;
 
 /**
- * The Y scale of a sparse heatmap-cells frame. Core Grafana draws a sparse
- * frame on a log 2 scale, and `rowsFrame.yBucketScale` replaces that scale.
- * A log scale cannot show a bound of 0 or less, so such a frame keeps one
- * label per bucket bound.
+ * The log scale of a sparse heatmap-cells frame, or `undefined` when the frame
+ * does not draw on a log scale. Core Grafana draws a sparse frame on a log
+ * scale, and `rowsFrame.yBucketScale` replaces that scale. The base is the
+ * base of `rowsScale`, then the base in the `yMin` field config, then 2.
+ *
+ * `floor` is the bottom of the axis: the smallest lower bound above 0, down to
+ * a whole magnitude. A frame with no lower bound above 0 keeps one label per
+ * bucket bound.
  * See `prepConfig` in
  * https://github.com/grafana/grafana/blob/main/public/app/plugins/panel/heatmap/utils.ts
  */
-function sparseYScale(
-  buckets: BinnedHeatmapBucket[],
+function sparseLogScale(
+  yMin: Field<number>,
   rowsScale: BinnedHeatmapRowsScale
-): BinnedHeatmapYScale | undefined {
+): { base: number; floor: number } | undefined {
   if (rowsScale.type === 'linear') {
-    return { type: 'linear' };
-  }
-  const logFits = buckets.every((bucket) => bucket.start > 0 && bucket.end > 0);
-  if (!logFits) {
     return undefined;
   }
-  return { type: 'log', log: rowsScale.type === 'log' ? rowsScale.log : SPARSE_LOG_BASE };
+  const lowest = yMin.values.reduce((min, value) => (value > 0 && value < min ? value : min), Infinity);
+  if (!Number.isFinite(lowest)) {
+    return undefined;
+  }
+  const base = rowsScale.type === 'log' ? rowsScale.log : (fieldLogBase(yMin) ?? SPARSE_LOG_BASE);
+  return { base, floor: base ** Math.floor(Math.log(lowest) / Math.log(base)) };
 }
 
 /** Build the keep-predicate for a cell filter. No filter keeps every cell. */
