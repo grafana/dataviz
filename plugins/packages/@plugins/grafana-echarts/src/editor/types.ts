@@ -320,6 +320,9 @@ export interface EChartsFieldConfig extends HideableFieldConfig {
   spanNulls?: boolean | number;
   // Core "Line interpolation" of line series. See `getLineInterpolation` in `lib/echarts/options/cartesian.ts`.
   lineInterpolation?: LineInterpolation;
+  // Core "Fill below to" of line series: the name of the series where the fill stops. See
+  // `lib/echarts/converters/fillBelowTo.ts`.
+  fillBelowTo?: string;
 }
 export interface EChartsGraphFieldConfig extends GraphFieldConfig, EChartsFieldConfig {}
 /** Field config of the timeline family: core's state timeline `custom.*` keys. */

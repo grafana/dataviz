@@ -25,7 +25,7 @@ can be styled; those options are meaningless for the heatmap cells themselves.
 | Calculate from data + bucket calculation (`calculate`, `calculation`) | Core's own `heatmap` transformer from the host registry ([calculate.ts](../../lib/grafana/heatmap/calculate.ts)). Absent in the standalone renderer, which draws the raw rows.                         | Supported                 |
 | Y axis: unit, decimals, min, max, reverse (`yAxis.*`)                 | Same paths. A log range snaps out to whole magnitudes, as in core.                                                                                                                                     | Supported                 |
 | Y axis: placement, width, label                                       | none                                                                                                                                                                                                   | Not supported             |
-| Y bucket scale for rows (`rowsFrame.yBucketScale`)                    | Auto (equal-height `le` rows, the default), Linear, Log                                                                                                                                                | Supported                 |
+| Y bucket scale (`rowsFrame.yBucketScale`)                             | Auto (equal-height `le` rows; log 2 for sparse cells), Linear, Log. A sparse log axis starts at the smallest lower bound above 0. A dense `heatmap-cells` frame keeps its own scale.                   | Supported                 |
 | Y axis: tick alignment (`rowsFrame.layout`)                           | none                                                                                                                                                                                                   | Not supported             |
 | Colors: mode (Scheme/Opacity), fill, scale, exponent (`color.*`)      | Same paths. As in core, scale and exponent apply to opacity mode only.                                                                                                                                 | Supported                 |
 | Colors: steps, reverse                                                | none                                                                                                                                                                                                   | Not supported             |
@@ -42,6 +42,10 @@ can be styled; those options are meaningless for the heatmap cells themselves.
 | —                                                                     | `heatmapLayout` (Binned/Matrix coordinate model)                                                                                                                                                       | ECharts-only              |
 | —                                                                     | `heatmapColorScale.placement` (Right/Bottom/None visualMap)                                                                                                                                            | ECharts-only              |
 | —                                                                     | per-field `seriesType` cartesian overlay                                                                                                                                                               | ECharts-only              |
+
+The zero bucket of a Prometheus native histogram goes from `-zt` to `zt`. The zero threshold `zt` is 2^-128 by default.
+On a log axis, this bucket ends at or below the bottom of the axis, so its count is not drawn. Core does the same.
+With more than one sparse frame, the frames share one axis bottom. Core draws only the first `heatmap-cells` frame.
 
 The comparison dashboards are `provisioning/dashboards/heatmap-core-parity-*.json` (TestData).
 

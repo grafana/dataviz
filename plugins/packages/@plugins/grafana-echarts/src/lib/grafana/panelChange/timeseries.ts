@@ -40,6 +40,7 @@ const PASSTHROUGH_CUSTOM_KEYS = [
   'axisSoftMax',
   'axisSoftMin',
   'axisWidth',
+  'fillBelowTo',
   'hideFrom',
   'lineStyle',
   'scaleDistribution',

@@ -1,6 +1,7 @@
 import { type DataFrame, DataFrameType, FieldType, toDataFrame } from '@grafana/data';
 import {
   type BinnedHeatmapCell,
+  type BinnedHeatmapRowsScale,
   frameToBinnedHeatmap,
   isBinnedHeatmapFrame,
 } from 'lib/echarts/converters/binnedHeatmap';
@@ -189,7 +190,8 @@ describe('frameToBinnedHeatmap - heatmap-cells', () => {
       ],
     });
 
-    const result = frameToBinnedHeatmap([frame]);
+    // A linear Y bucket scale keeps the bounds as they are (the default log scale has no 0).
+    const result = frameToBinnedHeatmap([frame], undefined, { rowsScale: { type: 'linear' } });
     expect(result!.cells).toHaveLength(2);
     expect(result!.cells[0]).toMatchObject({ xStart: 1000, xEnd: 2000, yStart: 0, yEnd: 10, value: 3 });
     expect(result!.cells[1]).toMatchObject({ xStart: 2000, xEnd: 3000, yStart: 10, yEnd: 20, value: 7 });
@@ -275,8 +277,106 @@ describe('frameToBinnedHeatmap - Prometheus native histogram (sparse heatmap-cel
     const result = frameToBinnedHeatmap([frame]);
     expect(result!.cells[0]).toMatchObject({ xStart: 1000, xEnd: 2000, yStart: 0.5, yEnd: 1, value: 4 });
     expect(result!.cells[2]).toMatchObject({ xStart: 2000, xEnd: 3000 });
-    // Both y bounds are explicit, so the axis keeps one label per bucket bound.
-    expect(result!.yScale).toBeUndefined();
+  });
+
+  // The buckets of a native histogram are exponential: 2^(1/4) apart.
+  const sparseFrame = (yMin: number[], yMax: number[]) =>
+    toDataFrame({
+      meta: { type: DataFrameType.HeatmapCells },
+      fields: [
+        { name: 'xMax', type: FieldType.time, values: yMin.map(() => 2000) },
+        { name: 'yMin', type: FieldType.number, values: yMin },
+        { name: 'yMax', type: FieldType.number, values: yMax },
+        { name: 'count', type: FieldType.number, values: yMin.map(() => 1) },
+      ],
+    });
+  const positive = sparseFrame([2 ** -19.25, 2 ** 1.25], [2 ** -19, 2 ** 1.5]);
+
+  it('draws positive bounds on a log 2 scale, as in core', () => {
+    expect(frameToBinnedHeatmap([positive])!.yScale).toEqual({ type: 'log', log: 2 });
+  });
+
+  it('lets the Y bucket scale replace the log 2 scale', () => {
+    const scaleOf = (rowsScale: BinnedHeatmapRowsScale) =>
+      frameToBinnedHeatmap([positive], [positive], { rowsScale })!.yScale;
+    expect(scaleOf({ type: 'log', log: 10 })).toEqual({ type: 'log', log: 10 });
+    expect(scaleOf({ type: 'linear' })).toEqual({ type: 'linear' });
+  });
+
+  it('takes the log base from the yMin field config, as in core', () => {
+    const frame = sparseFrame([1, 10], [10, 100]);
+    frame.fields[1].config = { custom: { scaleDistribution: { type: 'log', log: 10 } } };
+    expect(frameToBinnedHeatmap([frame])!.yScale).toEqual({ type: 'log', log: 10 });
+  });
+
+  it('keeps the log scale when a bucket has a bound of 0 or less', () => {
+    // The zero bucket of a native histogram crosses 0, and a negative bucket is below it.
+    const result = frameToBinnedHeatmap([sparseFrame([-2, -1, 1], [-1, 1, 2])])!;
+    expect(result.yScale).toEqual({ type: 'log', log: 2 });
+    // The axis starts at the smallest lower bound above 0. The two other buckets end there or below.
+    expect(result.cells.map((cell) => [cell.yStart, cell.yEnd])).toEqual([[1, 2]]);
+    expect(result).toMatchObject({ yMin: 1, yMax: 2 });
+  });
+
+  it('starts a bucket with a lower bound of 0 at the bottom of the axis', () => {
+    const result = frameToBinnedHeatmap([sparseFrame([0, 10], [10, 20])])!;
+    // The smallest lower bound above 0 is 10. The whole magnitude below it is 8.
+    expect(result.cells.map((cell) => [cell.yStart, cell.yEnd])).toEqual([
+      [8, 10],
+      [10, 20],
+    ]);
+    expect(result).toMatchObject({ yMin: 8, yMax: 20 });
+  });
+
+  it('keeps a floor that is a whole magnitude, on a log 10 scale', () => {
+    // `Math.log(1000) / Math.log(10)` is 2.9999999999999996. The floor is 1000, not 100.
+    const result = frameToBinnedHeatmap([sparseFrame([0, 1000], [2000, 10000])], undefined, {
+      rowsScale: { type: 'log', log: 10 },
+    })!;
+    expect(result.cells.map((cell) => [cell.yStart, cell.yEnd])).toEqual([
+      [1000, 2000],
+      [1000, 10000],
+    ]);
+    expect(result).toMatchObject({ yMin: 1000, yMax: 10000 });
+  });
+
+  describe('with more than one sparse frame', () => {
+    it('uses one floor for all the frames', () => {
+      // The smallest lower bound above 0 is 0.5, in the first frame.
+      const result = frameToBinnedHeatmap([sparseFrame([0.5], [1]), sparseFrame([0, 8], [16, 16])])!;
+      expect(result.yScale).toEqual({ type: 'log', log: 2 });
+      // The bucket from 0 to 16 of the second frame starts at 0.5, not at 8.
+      expect(result.cells.map((cell) => [cell.yStart, cell.yEnd])).toEqual([
+        [0.5, 1],
+        [0.5, 16],
+        [8, 16],
+      ]);
+      expect(result).toMatchObject({ yMin: 0.5, yMax: 16 });
+    });
+
+    it('keeps the axis above 0 when one frame has no lower bound above 0', () => {
+      // The second frame has only a zero bucket and a negative bucket.
+      const result = frameToBinnedHeatmap([sparseFrame([1], [2]), sparseFrame([-1, -2], [4, -1])])!;
+      expect(result.yScale).toEqual({ type: 'log', log: 2 });
+      // The zero bucket starts at the floor of the first frame. The negative bucket is not drawn.
+      expect(result.cells.map((cell) => [cell.yStart, cell.yEnd])).toEqual([
+        [1, 2],
+        [1, 4],
+      ]);
+      expect(result).toMatchObject({ yMin: 1, yMax: 4 });
+    });
+  });
+
+  it('keeps every bucket on a linear Y bucket scale', () => {
+    const result = frameToBinnedHeatmap([sparseFrame([-2, -1, 1], [-1, 1, 2])], undefined, {
+      rowsScale: { type: 'linear' },
+    })!;
+    expect(result.cells).toHaveLength(3);
+    expect(result).toMatchObject({ yMin: -2, yMax: 2 });
+  });
+
+  it('keeps one label per bucket bound when no lower bound is above 0', () => {
+    expect(frameToBinnedHeatmap([sparseFrame([-2, -1], [-1, 0])])!.yScale).toBeUndefined();
   });
 });
 
