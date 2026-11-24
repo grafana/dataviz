@@ -14,9 +14,9 @@ different render type.
 Core Time series exposes the full graph field config (draw style, line width,
 fill, points, stacking, per-axis config) plus the standard field-config set. This
 module keeps the standard field-config set and most of the graph field config:
-axis, line style, line interpolation, line width, fill opacity, fill below to, points, stacking and
-Connect null values. The gaps are gradient mode, bar alignment and
-Disconnect values (see "Graph styles"). The module also reads the core option paths,
+axis, line style, line interpolation, line width, fill opacity, gradient mode (Opacity and Hue),
+fill below to, points, stacking and Connect null values. The gaps are the gradient mode Scheme,
+bar alignment and Disconnect values (see "Graph styles"). The module also reads the core option paths,
 so a switch from core Time series keeps the settings ([panelChange](../../../lib/grafana/panelChange/timeseries.ts)).
 
 ## Panel options
@@ -44,7 +44,7 @@ so a switch from core Time series keeps the settings ([panelChange](../../../lib
 | Style (lines/bars/points), line interpolation                              | `seriesType` (line/bar/scatter); per-field `lineInterpolation` -> ECharts `smooth` / `step`                           | Supported     |
 | Line width, fill opacity                                                   | `lineWidth`, `fillOpacity` (panel options, Default tier, and per field) -> `lineStyle.width`, `areaStyle.opacity`     | Supported     |
 | Line style (solid, dash, dots)                                             | per-field `lineStyle` (`LineStyleEditor`)                                                                             | Supported     |
-| Gradient mode                                                              | none (the chart draws no gradient on lines; histogram only)                                                           | Not supported |
+| Gradient mode                                                              | per-field `gradientMode`: None, Opacity and Hue on line series. Scheme draws as None; bars draw no gradient           | Partial       |
 | Fill below to                                                              | per-field `fillBelowTo` (override only): a band of two hidden stacked line series; not for stacked series or two axes | Partial       |
 | Bar alignment                                                              | none (each bar is at the center of its time)                                                                          | Not supported |
 | Transform (Negative Y)                                                     | per-field `transform`; Constant is not supported                                                                      | Partial       |
@@ -63,6 +63,16 @@ ECharts series data, and the tooltip maps each point back to its frame row. The 
 category axis, a threshold is not supported: the line breaks at each null, and the panel shows a warning notice.
 Dashboard: [cartesian-span-nulls.json](../../../../provisioning/dashboards/cartesian/cartesian-span-nulls.json)
 (ECharts and core pairs). Tests: `span-nulls.canvas.test.tsx`, `span-nulls.integration.test.tsx`, `spanNulls.test.ts`.
+
+Gradient mode follows core `UPlotSeriesBuilder` and `gradientFills.ts`. Opacity fills the area with a gradient from
+the series color at the fill opacity to transparent, and the line is solid. Hue draws the line and the fill with a
+gradient of hues. Each gradient is from the top to the bottom of the plot, so a series shows only a part of it
+(`registerLinePlotGradients`). The points and the tooltip keep the series color. Core draws the points of Hue with
+the gradient. Scheme draws as None, and bars draw no gradient. A Fill below to band has the gradient of its series.
+With Opacity and no Fill opacity, the band is the series color at 35. Core draws a gradient from 35 to
+transparent. Dashboard:
+[cartesian-gradient-mode.json](../../../../provisioning/dashboards/cartesian/cartesian-gradient-mode.json) (ECharts
+and core pairs). Tests: `gradient-mode.canvas.test.tsx`, `gradient-mode.integration.test.tsx`, `cartesian.test.ts`.
 
 Fill below to moves the fill of a line series from the axis to another series, as the uPlot band of core. ECharts has
 no band between two series, so the chart adds two hidden line series in one stack: the values of the target, and the
@@ -115,7 +125,7 @@ byValue + bySeries).
 
 - ECharts-only: a single panel can mix cartesian render types per field (e.g. one
   field as `bar` over others as `line`) via the `seriesType` override.
-- The remaining gaps are gradient mode, bar alignment, Disconnect values,
+- The remaining gaps are the gradient mode Scheme, bar alignment, Disconnect values,
   the symlog scale, Show values on points, annotation clustering and annotation edit/delete.
   The source of truth for a switch from core Time series is
   [capabilities/timeseries.json](../../../lib/grafana/panelChange/capabilities/timeseries.json).

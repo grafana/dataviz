@@ -67,6 +67,7 @@ import { use as registerEChartsModules } from 'echarts/core';
 import { LabelLayout, LegacyGridContainLabel } from 'echarts/features';
 import { CanvasRenderer } from 'echarts/renderers';
 
+import { registerLinePlotGradients } from 'lib/echarts/plotGradient';
 import { registerChordLiteralFill } from 'lib/echarts/relations/chordFill/register';
 import { registerEdgeLabelFadeIn, registerEdgeLabelLayout } from 'lib/echarts/relations/edgeLabels/register';
 // Before `use`, unlike `registerEdgeLabelLayout` below: this one has to set its flag before
@@ -132,6 +133,8 @@ registerEChartsModules([
 // registration order. See `registerEdgeLabelLayout`.
 registerEdgeLabelLayout();
 registerChordLiteralFill();
+// The core gradient modes of line series: a gradient over the plot area. See `plotGradient.ts`.
+registerLinePlotGradients();
 
 // `init` creates a chart instance bound to a DOM node. This module is imported
 // statically by Panel.tsx, which is itself React.lazy-loaded (see

@@ -1,5 +1,5 @@
 import { type FieldConfigEditorBuilder, histogramFieldInfo, type PanelOptionsEditorBuilder } from '@grafana/data';
-import { commonOptionsBuilder, getGraphFieldOptions } from '@grafana/ui';
+import { commonOptionsBuilder } from '@grafana/ui';
 import { histogramCategoryName, histogramPath } from 'editor/cartesian';
 import { type EChartsGraphFieldConfig } from 'editor/types';
 import { type PanelOptions } from 'types';
@@ -57,11 +57,11 @@ export function addCartesianHistogramOptions(builder: PanelOptionsEditorBuilder<
 }
 
 /**
- * Register the field settings of the core Histogram panel: Stacking (with a group in an override), Line width,
- * Fill opacity and Gradient mode. The histogram mode reads them from each field (`getHistogramFieldStyles`). The
+ * Register the field settings of the core Histogram panel: Stacking (with a group in an override), Line width
+ * and Fill opacity. The histogram mode reads them from each field (`getHistogramFieldStyles`). The
  * time series and category modes read Line width and Fill opacity per field (`resolveFieldStyleOptions`).
  * They have no default value. Thus a panel with no field setting keeps its panel options (`stacking`,
- * `barFillOpacity` and `lineWidth`).
+ * `barFillOpacity` and `lineWidth`). Gradient mode is registered by `addCartesianSeriesStyleFieldConfig`.
  * Core source: https://github.com/grafana/grafana/blob/main/public/app/plugins/panel/histogram/module.tsx
  * https://grafana.com/developers/plugin-tools/how-to-guides/panel-plugins/add-support-for-field-config
  */
@@ -83,12 +83,5 @@ export function addCartesianHistogramFieldConfig(builder: FieldConfigEditorBuild
       category,
       description,
       settings: { min: 0, max: 100, step: 1 },
-    })
-    .addRadio({
-      path: 'gradientMode',
-      name: 'Gradient mode',
-      category,
-      description: 'Histogram mode. Empty uses None.',
-      settings: { options: getGraphFieldOptions().fillGradient },
     });
 }

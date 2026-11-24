@@ -1,6 +1,6 @@
 import { colorManipulator } from '@grafana/data';
 
-// The colors of the core gradient modes "Opacity" and "Hue" of a bar fill (`custom.gradientMode`). Core draws one
+// The colors of the core gradient modes "Opacity" and "Hue" of a line, an area or a bar (`custom.gradientMode`). Core draws one
 // gradient from the top to the bottom of the plot. Offset 0 is the top.
 // Core source: https://github.com/grafana/grafana/blob/main/packages/grafana-ui/src/components/uPlot/config/gradientFills.ts
 

@@ -1,5 +1,5 @@
 import { type ValueFormatter } from '@grafana/data';
-import { type LineInterpolation } from '@grafana/schema';
+import { type GraphGradientMode, type LineInterpolation } from '@grafana/schema';
 import { type LineSeriesOption } from 'echarts';
 import {
   type CartesianShowValues,
@@ -82,4 +82,6 @@ export interface CartesianSeriesInput {
   lineDash?: number[];
   /** Line series: draw round segment ends, so a zero-length segment is a dot (ECharts `lineStyle.cap`). */
   lineRoundCap?: boolean;
+  /** Line series: the gradient of the line and of the fill (core `custom.gradientMode`). See `getLineGradientColors`. */
+  gradientMode?: GraphGradientMode;
 }

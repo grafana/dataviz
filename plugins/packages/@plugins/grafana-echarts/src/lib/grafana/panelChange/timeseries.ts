@@ -28,7 +28,8 @@ const STANDARD_KEYS = [
 
 /**
  * The `custom` keys that the cartesian panel has with the same path and the same values. `spanNulls` is
- * Connect null values: `false`, `true` or a gap threshold in ms (#414, `resolveFieldSpanNulls`).
+ * Connect null values: `false`, `true` or a gap threshold in ms (#414, `resolveFieldSpanNulls`). `gradientMode`
+ * is Gradient mode: line series draw Opacity and Hue (#120, `resolveFieldGradientMode`).
  */
 const PASSTHROUGH_CUSTOM_KEYS = [
   'axisBorderShow',
@@ -41,6 +42,7 @@ const PASSTHROUGH_CUSTOM_KEYS = [
   'axisSoftMin',
   'axisWidth',
   'fillBelowTo',
+  'gradientMode',
   'hideFrom',
   'lineStyle',
   'scaleDistribution',

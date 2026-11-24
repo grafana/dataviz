@@ -1,5 +1,6 @@
 import { type DataFrame, FieldType, toDataFrame } from '@grafana/data';
 import { type LineSeriesOption } from 'echarts';
+import { getPlotGradient } from 'lib/echarts/plotGradient';
 import { applyFillBelowTo, FILL_BELOW_TO_DEFAULT_OPACITY, resolveFillBelowTo } from './fillBelowTo';
 
 type FieldInput = { name: string; fillBelowTo?: string; displayName?: string; displayNameFromDS?: string };
@@ -109,6 +110,29 @@ describe('applyFillBelowTo', () => {
     expect(source.areaStyle).toBeUndefined();
     expect(target.areaStyle).toEqual({ opacity: 0.1 });
     expect(band.areaStyle).toEqual({ color: 'red', opacity: 0.6 });
+  });
+
+  // A gradient mode (#120) gives the source an `areaStyle` with a gradient color. Its color stops have the fill
+  // opacity, so the opacity of the `areaStyle` is 1 (`getLineGradientColors`).
+  it('moves the gradient fill of the source to the band', () => {
+    const gradient = getPlotGradient([
+      { offset: 0, color: 'rgba(255, 0, 0, 0.5)' },
+      { offset: 1, color: 'rgba(255, 0, 0, 0)' },
+    ]);
+    const series = [line([5, 6], { areaStyle: { color: gradient, opacity: 1 } }), line([2, 4])];
+    const [source, , , band] = applyFillBelowTo(series, [1, undefined]) as LineSeriesOption[];
+    expect(source.areaStyle).toBeUndefined();
+    expect(band.areaStyle).toEqual({ color: gradient, opacity: 1 });
+  });
+
+  it('gives a band with no fill of the source the gradient of a Hue line, at the default opacity', () => {
+    const gradient = getPlotGradient([
+      { offset: 0, color: '#ff0000' },
+      { offset: 1, color: '#990000' },
+    ]);
+    const series = [line([5, 6], { lineStyle: { color: gradient } }), line([2, 4])];
+    const [, , , band] = applyFillBelowTo(series, [1, undefined]) as LineSeriesOption[];
+    expect(band.areaStyle).toEqual({ color: gradient, opacity: FILL_BELOW_TO_DEFAULT_OPACITY });
   });
 
   it('gives the band the axis and the line shape of the source, and no sampling', () => {

@@ -222,10 +222,9 @@ export function applyFillBelowTo<T extends BandSource>(
         ...hidden,
         id: `${id}:band`,
         data: difference,
-        areaStyle: {
-          color: source.lineStyle?.color,
-          opacity: source.areaStyle?.opacity ?? FILL_BELOW_TO_DEFAULT_OPACITY,
-        },
+        // The fill of the source: its opacity, and its gradient for a gradient mode (`getLineGradientColors`).
+        // A source with no fill has the line color at the default opacity.
+        areaStyle: { color: source.lineStyle?.color, opacity: FILL_BELOW_TO_DEFAULT_OPACITY, ...source.areaStyle },
       }
     );
     // The fill of the source is the band.

@@ -1,8 +1,9 @@
-import { LineInterpolation } from '@grafana/schema';
+import { GraphGradientMode, LineInterpolation } from '@grafana/schema';
 import { formattedValueToString, type GrafanaTheme2, type TimeRange, type ValueFormatter } from '@grafana/data';
 import {
   type BarSeriesOption,
   type EffectScatterSeriesOption,
+  type LinearGradientObject,
   type LineSeriesOption,
   type ScatterSeriesOption,
 } from 'echarts';
@@ -21,7 +22,9 @@ import { getBarItemStyle } from 'lib/echarts/options/bars';
 import { getThemedLabelStyle } from 'lib/echarts/options/labels';
 import { type CartesianSeriesInput, type CartesianValueLabelInput } from 'lib/echarts/options/types';
 import { type PerfSeriesOptions } from 'lib/echarts/performance/types';
+import { getPlotGradient } from 'lib/echarts/plotGradient';
 import { formatEChartsValue } from 'lib/echarts/style';
+import { type GradientStop, getHueGradientStops, getOpacityGradientStops } from 'lib/grafana/fields/gradientColors';
 import { type PanelOptions } from 'types';
 
 /**
@@ -198,7 +201,7 @@ export function getBarRadius(barRadius: number | undefined): number | undefined 
  * https://echarts.apache.org/en/option.html#series-line.lineStyle.cap
  */
 export function getCartesianLineStyle(
-  color: string | undefined,
+  color: string | LinearGradientObject | undefined,
   lineWidth: number | undefined,
   lineDash?: number[],
   lineRoundCap?: boolean
@@ -219,6 +222,37 @@ export function getCartesianLineStyle(
  */
 export function getCartesianAreaStyle(fillOpacity: number | undefined): LineSeriesOption['areaStyle'] | undefined {
   return fillOpacity != null && fillOpacity > 0 ? { opacity: Math.min(fillOpacity, 100) / 100 } : undefined;
+}
+
+/**
+ * The line color and the `areaStyle` of a line series for the core "Gradient mode" (`custom.gradientMode`), as core
+ * `UPlotSeriesBuilder` (`getLineColor`, `getFill`):
+ * - None (and Scheme, not supported yet): the color, and the color at the fill opacity.
+ * - Opacity: the color, and a gradient from the color at the fill opacity to transparent.
+ * - Hue: a gradient of hues, and the same gradient at the fill opacity.
+ * A fill opacity of 0 draws no area. Each gradient is from the top to the bottom of the plot (`getPlotGradient`).
+ * https://github.com/grafana/grafana/blob/main/packages/grafana-ui/src/components/uPlot/config/UPlotSeriesBuilder.ts
+ * https://echarts.apache.org/en/option.html#series-line.areaStyle.color
+ */
+export function getLineGradientColors(
+  color: string | undefined,
+  fillOpacity: number | undefined,
+  gradientMode: GraphGradientMode | undefined,
+  isDark: boolean
+): { lineColor: string | LinearGradientObject | undefined; areaStyle: LineSeriesOption['areaStyle'] | undefined } {
+  const opacity = Math.min(Math.max(fillOpacity ?? 0, 0), 100) / 100;
+  // The color stops have the fill opacity, so the area has no opacity of its own.
+  const area = (stops: GradientStop[]) => (opacity > 0 ? { color: getPlotGradient(stops), opacity: 1 } : undefined);
+  if (color !== undefined && gradientMode === GraphGradientMode.Opacity) {
+    return { lineColor: color, areaStyle: area(getOpacityGradientStops(color, opacity)) };
+  }
+  if (color !== undefined && gradientMode === GraphGradientMode.Hue) {
+    return {
+      lineColor: getPlotGradient(getHueGradientStops(color, 1, isDark)),
+      areaStyle: area(getHueGradientStops(color, opacity, isDark)),
+    };
+  }
+  return { lineColor: color, areaStyle: getCartesianAreaStyle(fillOpacity) };
 }
 
 /**
@@ -356,6 +390,7 @@ export function buildCartesianSeries(
     lineInterpolation,
     lineDash,
     lineRoundCap,
+    gradientMode,
   } = input;
   const label = getCartesianValueLabel(
     {
@@ -402,12 +437,13 @@ export function buildCartesianSeries(
         ...(label && options.showValues !== 'always' ? { labelLayout: { hideOverlap: true } } : {}),
       };
     case 'line': {
-      const areaStyle = getCartesianAreaStyle(options.fillOpacity);
+      const { lineColor, areaStyle } = getLineGradientColors(color, options.fillOpacity, gradientMode, theme.isDark);
       return {
         ...common,
         type: 'line',
+        // The points and the tooltip keep the color of the series.
         itemStyle: { color },
-        lineStyle: getCartesianLineStyle(color, options.lineWidth, lineDash, lineRoundCap),
+        lineStyle: getCartesianLineStyle(lineColor, options.lineWidth, lineDash, lineRoundCap),
         ...(areaStyle ? { areaStyle } : {}),
         // https://echarts.apache.org/en/option.html#series-line.connectNulls
         ...(connectNulls ? { connectNulls } : {}),

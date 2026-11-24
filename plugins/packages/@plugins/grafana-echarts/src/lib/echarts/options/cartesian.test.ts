@@ -9,7 +9,7 @@ import {
   toDataFrame,
   type ValueFormatter,
 } from '@grafana/data';
-import { GraphThresholdsStyleMode } from '@grafana/schema';
+import { GraphGradientMode, GraphThresholdsStyleMode } from '@grafana/schema';
 import { type CallbackDataParams } from 'echarts/types/dist/shared';
 import { seriesTypePath } from 'editor/constants';
 import { type CartesianShowValues, type CartesianSingleValueSeriesType } from 'editor/types';
@@ -26,8 +26,10 @@ import {
   getCartesianLineStyle,
   getCartesianSymbol,
   getCartesianValueLabel,
+  getLineGradientColors,
   getXTickRotate,
 } from 'lib/echarts/options/cartesian';
+import { getHueGradientStops, getOpacityGradientStops } from 'lib/grafana/fields/gradientColors';
 import { type CartesianSeriesInput } from 'lib/echarts/options/types';
 import { type PanelOptions } from 'types';
 
@@ -314,6 +316,59 @@ describe('getCartesianAreaStyle', () => {
   });
 });
 
+// Core `UPlotSeriesBuilder` (`getLineColor`, `getFill`):
+// https://github.com/grafana/grafana/blob/main/packages/grafana-ui/src/components/uPlot/config/UPlotSeriesBuilder.ts
+describe('getLineGradientColors', () => {
+  const color = '#73bf69';
+  /** A gradient from the top to the bottom of the plot, in fractions of the plot, with the mark of the hook. */
+  const plotGradient = (colorStops: unknown) => ({
+    type: 'linear',
+    x: 0,
+    y: 0,
+    x2: 0,
+    y2: 1,
+    colorStops,
+    global: false,
+    plotGradient: true,
+  });
+
+  it.each([GraphGradientMode.None, GraphGradientMode.Scheme, undefined])(
+    'draws the mode %s with the color and the fill opacity',
+    (gradientMode) => {
+      expect(getLineGradientColors(color, 50, gradientMode, true)).toEqual({
+        lineColor: color,
+        areaStyle: { opacity: 0.5 },
+      });
+    }
+  );
+
+  it('fills Opacity from the color at the fill opacity to transparent, with a solid line', () => {
+    expect(getLineGradientColors(color, 50, GraphGradientMode.Opacity, true)).toEqual({
+      lineColor: color,
+      areaStyle: { color: plotGradient(getOpacityGradientStops(color, 0.5)), opacity: 1 },
+    });
+  });
+
+  it.each([true, false])('draws the line and the fill of Hue as hue gradients (dark theme: %s)', (isDark) => {
+    expect(getLineGradientColors(color, 50, GraphGradientMode.Hue, isDark)).toEqual({
+      lineColor: plotGradient(getHueGradientStops(color, 1, isDark)),
+      areaStyle: { color: plotGradient(getHueGradientStops(color, 0.5, isDark)), opacity: 1 },
+    });
+  });
+
+  it.each([GraphGradientMode.Opacity, GraphGradientMode.Hue])('draws no area for %s with no fill', (gradientMode) => {
+    expect(getLineGradientColors(color, 0, gradientMode, true).areaStyle).toBeUndefined();
+    expect(getLineGradientColors(color, undefined, gradientMode, true).areaStyle).toBeUndefined();
+  });
+
+  it('draws no gradient for a series with no color', () => {
+    expect(getLineGradientColors(undefined, 50, GraphGradientMode.Hue, true)).toEqual({
+      lineColor: undefined,
+      areaStyle: { opacity: 0.5 },
+    });
+  });
+});
+
 describe('getCartesianSymbol', () => {
   it('returns {} for unset (ECharts default symbol)', () => {
     expect(getCartesianSymbol(undefined)).toEqual({});
@@ -386,6 +441,23 @@ describe('buildCartesianSeries', () => {
       itemStyle: { color: '#111111' },
     });
     expect(series).not.toHaveProperty('barWidth');
+  });
+
+  it('applies the gradient mode to a line, and keeps the color of the points', () => {
+    const options = { lineWidth: 2, fillOpacity: 50 } as PanelOptions;
+    const series = buildCartesianSeries({ ...input, gradientMode: GraphGradientMode.Hue }, 'line', options, theme);
+    const { lineColor, areaStyle } = getLineGradientColors(input.color, 50, GraphGradientMode.Hue, theme.isDark);
+    expect(series).toMatchObject({
+      lineStyle: { color: lineColor, width: 2 },
+      areaStyle,
+      itemStyle: { color: '#111111' },
+    });
+  });
+
+  it('draws no gradient on a bar', () => {
+    const options = { fillOpacity: 50 } as PanelOptions;
+    const bar = buildCartesianSeries({ ...input, gradientMode: GraphGradientMode.Hue }, 'bar', options, theme);
+    expect(bar).toEqual(buildCartesianSeries(input, 'bar', options, theme));
   });
 
   it('labels bars outside their end in Auto mode and hides overlapping labels', () => {

@@ -6,6 +6,7 @@ import { fallbackCategories, framesToCategoryCartesian } from 'lib/echarts/conve
 import {
   getFieldStackId,
   resolveFieldSeriesType,
+  resolveFieldGradientMode,
   resolveFieldLineInterpolation,
   resolveFieldLineDash,
   resolveFieldSpanNulls,
@@ -107,6 +108,7 @@ export function categoryCartesianToEChartsOption(
         ...(resolvedType === 'line' && resolveFieldSpanNulls(sources[i].field) === true ? { connectNulls: true } : {}),
         lineInterpolation: resolveFieldLineInterpolation(sources[i].field),
         ...(resolvedType === 'line' ? resolveFieldLineDash(sources[i].field) : undefined),
+        gradientMode: resolveFieldGradientMode(sources[i].field),
       },
       resolvedType,
       seriesOptions,

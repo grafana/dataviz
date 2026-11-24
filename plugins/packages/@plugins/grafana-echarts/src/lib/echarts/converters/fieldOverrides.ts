@@ -1,5 +1,5 @@
 import { type Field } from '@grafana/data';
-import { LineInterpolation } from '@grafana/schema';
+import { GraphGradientMode, LineInterpolation } from '@grafana/schema';
 import { LINE_STACK_GROUP_ID, STACK_GROUP_ID } from 'editor/cartesian';
 import { type CartesianSingleValueSeriesType, type PerformanceMode } from 'editor/types';
 import { isCartesianSingleValueSeriesType } from 'lib/echarts/charts/narrowing';
@@ -78,6 +78,15 @@ export function resolveFieldSpanNulls(field: Field): SpanNulls {
 export function resolveFieldLineInterpolation(field: Field): LineInterpolation {
   const value = getFieldConfigFromField(field).custom?.lineInterpolation;
   return value !== undefined && Object.values(LineInterpolation).includes(value) ? value : LineInterpolation.Linear;
+}
+
+/**
+ * The "Gradient mode" of a field (core `custom.gradientMode`, default `none`). An unknown value reads as `none`.
+ * Core: https://grafana.com/docs/grafana/latest/panels-visualizations/visualizations/time-series/#gradient-mode
+ */
+export function resolveFieldGradientMode(field: Field): GraphGradientMode {
+  const custom: Record<string, unknown> = { ...getFieldConfigFromField(field).custom };
+  return Object.values(GraphGradientMode).find((mode) => mode === custom.gradientMode) ?? GraphGradientMode.None;
 }
 
 /**

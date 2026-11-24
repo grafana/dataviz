@@ -136,9 +136,11 @@
     "custom.gradientMode": {
       "status": "cosmetic",
       "values": {
-        "none": "supported"
+        "none": "supported",
+        "opacity": "supported",
+        "hue": "supported"
       },
-      "note": "The chart draws no gradient."
+      "note": "The chart draws no gradient for the mode Scheme, and no gradient on bars."
     },
     "custom.lineStyle.fill": {
       "status": "supported"
