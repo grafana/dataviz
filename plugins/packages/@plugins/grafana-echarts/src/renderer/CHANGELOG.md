@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.1](https://github.com/grafana/dataviz/compare/grafana-echarts-renderer/v0.7.0...grafana-echarts-renderer/v0.7.1) (2026-11-24)
+
+
+### 🐛 Bug Fixes
+
+* **echarts:** hide heatmap bucket axis labels that overlap ([#305](https://github.com/grafana/dataviz/issues/305)) ([#313](https://github.com/grafana/dataviz/issues/313)) ([865ccbf](https://github.com/grafana/dataviz/commit/865ccbf410c07372dfd0b62178c09cd68be6aefb))
+* **echarts:** keep core Heatmap options on a change ([#314](https://github.com/grafana/dataviz/issues/314)) ([1af7515](https://github.com/grafana/dataviz/commit/1af7515bab375bf6056b1e1f548fbe47bdc28531))
+
 ## [0.7.0](https://github.com/grafana/dataviz/compare/grafana-echarts-renderer/v0.6.0...grafana-echarts-renderer/v0.7.0) (2026-11-19)
 
 
