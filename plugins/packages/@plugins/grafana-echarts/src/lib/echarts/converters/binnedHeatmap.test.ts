@@ -1,6 +1,7 @@
 import { type DataFrame, DataFrameType, FieldType, toDataFrame } from '@grafana/data';
 import {
   type BinnedHeatmapCell,
+  type BinnedHeatmapRowsScale,
   frameToBinnedHeatmap,
   isBinnedHeatmapFrame,
 } from 'lib/echarts/converters/binnedHeatmap';
@@ -275,8 +276,38 @@ describe('frameToBinnedHeatmap - Prometheus native histogram (sparse heatmap-cel
     const result = frameToBinnedHeatmap([frame]);
     expect(result!.cells[0]).toMatchObject({ xStart: 1000, xEnd: 2000, yStart: 0.5, yEnd: 1, value: 4 });
     expect(result!.cells[2]).toMatchObject({ xStart: 2000, xEnd: 3000 });
-    // Both y bounds are explicit, so the axis keeps one label per bucket bound.
-    expect(result!.yScale).toBeUndefined();
+  });
+
+  // The buckets of a native histogram are exponential: 2^(1/4) apart.
+  const sparseFrame = (yMin: number[], yMax: number[]) =>
+    toDataFrame({
+      meta: { type: DataFrameType.HeatmapCells },
+      fields: [
+        { name: 'xMax', type: FieldType.time, values: yMin.map(() => 2000) },
+        { name: 'yMin', type: FieldType.number, values: yMin },
+        { name: 'yMax', type: FieldType.number, values: yMax },
+        { name: 'count', type: FieldType.number, values: yMin.map(() => 1) },
+      ],
+    });
+  const positive = sparseFrame([2 ** -19.25, 2 ** 1.25], [2 ** -19, 2 ** 1.5]);
+
+  it('draws positive bounds on a log 2 scale, as in core', () => {
+    expect(frameToBinnedHeatmap([positive])!.yScale).toEqual({ type: 'log', log: 2 });
+  });
+
+  it('lets the Y bucket scale replace the log 2 scale', () => {
+    const scaleOf = (rowsScale: BinnedHeatmapRowsScale) =>
+      frameToBinnedHeatmap([positive], [positive], { rowsScale })!.yScale;
+    expect(scaleOf({ type: 'log', log: 10 })).toEqual({ type: 'log', log: 10 });
+    expect(scaleOf({ type: 'linear' })).toEqual({ type: 'linear' });
+  });
+
+  it('keeps one label per bucket bound when a bound is 0 or less', () => {
+    // A log scale cannot show these bounds.
+    const withZero = sparseFrame([0, 1], [1, 2]);
+    expect(frameToBinnedHeatmap([withZero])!.yScale).toBeUndefined();
+    const negative = sparseFrame([-2, 1], [-1, 2]);
+    expect(frameToBinnedHeatmap([negative])!.yScale).toBeUndefined();
   });
 });
 

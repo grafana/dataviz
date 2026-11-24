@@ -98,6 +98,9 @@ export interface BinnedHeatmapCellFilter {
  * scale" for heatmap-rows. `auto` (the default) gives every bucket the same
  * height, which keeps exponential Prometheus buckets readable. `linear` and
  * `log` place buckets at their numeric bounds.
+ *
+ * As in core, the scale also applies to a sparse heatmap-cells frame. There,
+ * `auto` is a log 2 scale.
  */
 export type BinnedHeatmapRowsScale = { type: 'auto' } | { type: 'linear' } | { type: 'log'; log: number };
 
@@ -110,7 +113,7 @@ export interface BinnedHeatmapOptions {
 interface FrameHeatmap {
   cells: BinnedHeatmapCell[];
   buckets: BinnedHeatmapBucket[];
-  /** Numeric Y scale of a dense heatmap-cells frame. Unset for source buckets. */
+  /** Numeric Y scale of a heatmap-cells frame or of log rows. Unset for source buckets. */
   yScale?: BinnedHeatmapYScale;
   /** True for numeric/`le` bounds, false for ordinal (field-name) rows. */
   labelsAtBounds: boolean;
@@ -331,10 +334,16 @@ function denseBucketBounds(values: number[], edge: 'min' | 'max', logBase?: numb
  *
  * A dense `yMin`/`yMax` frame (for example the output of core's heatmap
  * calculation) gets a numeric Y scale, log when the field config says so.
+ * A sparse frame (for example a Prometheus native histogram) gets a log 2
+ * scale, unless `rowsScale` sets a different scale. See `sparseYScale`.
  * The first value field that isn't an axis-bound field is the displayed value.
  * See https://grafana.com/developers/dataplane/heatmap#heatmap-cells
  */
-function cellsToCells(frame: NumericFrame, keep: (value: number | null) => boolean): FrameHeatmap {
+function cellsToCells(
+  frame: NumericFrame,
+  keep: (value: number | null) => boolean,
+  rowsScale: BinnedHeatmapRowsScale = { type: 'auto' }
+): FrameHeatmap {
   const xMin = fieldByName(frame, 'xMin');
   const xMax = fieldByName(frame, 'xMax');
   const xCenter =
@@ -411,13 +420,40 @@ function cellsToCells(frame: NumericFrame, keep: (value: number | null) => boole
     cells.push({ xStart: xs, xEnd: xe, yStart: ys, yEnd: ye, value, field: valueField, rowIndex: i });
   }
 
-  const yScale: BinnedHeatmapYScale | undefined = denseY
-    ? yLog
-      ? { type: 'log', log: yLog }
-      : { type: 'linear' }
-    : undefined;
+  const buckets = Array.from(bucketByKey.values());
+  let yScale: BinnedHeatmapYScale | undefined;
+  if (denseY) {
+    yScale = yLog ? { type: 'log', log: yLog } : { type: 'linear' };
+  } else if (yMin && yMax) {
+    yScale = sparseYScale(buckets, rowsScale);
+  }
 
-  return { cells, buckets: Array.from(bucketByKey.values()), labelsAtBounds: true, valueField, yScale };
+  return { cells, buckets, labelsAtBounds: true, valueField, yScale };
+}
+
+/** Log base of a sparse heatmap-cells frame, as in core Grafana. */
+const SPARSE_LOG_BASE = 2;
+
+/**
+ * The Y scale of a sparse heatmap-cells frame. Core Grafana draws a sparse
+ * frame on a log 2 scale, and `rowsFrame.yBucketScale` replaces that scale.
+ * A log scale cannot show a bound of 0 or less, so such a frame keeps one
+ * label per bucket bound.
+ * See `prepConfig` in
+ * https://github.com/grafana/grafana/blob/main/public/app/plugins/panel/heatmap/utils.ts
+ */
+function sparseYScale(
+  buckets: BinnedHeatmapBucket[],
+  rowsScale: BinnedHeatmapRowsScale
+): BinnedHeatmapYScale | undefined {
+  if (rowsScale.type === 'linear') {
+    return { type: 'linear' };
+  }
+  const logFits = buckets.every((bucket) => bucket.start > 0 && bucket.end > 0);
+  if (!logFits) {
+    return undefined;
+  }
+  return { type: 'log', log: rowsScale.type === 'log' ? rowsScale.log : SPARSE_LOG_BASE };
 }
 
 /** Build the keep-predicate for a cell filter. No filter keeps every cell. */
@@ -435,7 +471,8 @@ function cellFilterPredicate(filter?: BinnedHeatmapCellFilter): (value: number |
  * frames are merged into a single cell set.
  *
  * `filter` leaves out cells by value; the value range comes from the kept
- * cells only. `rowsScale` places `le` buckets (see `BinnedHeatmapRowsScale`).
+ * cells only. `rowsScale` places `le` buckets and sets the scale of a sparse
+ * frame (see `BinnedHeatmapRowsScale`).
  *
  * Returns `null` when no usable cells can be derived, so the caller can skip the
  * heatmap layer.
@@ -456,13 +493,13 @@ export function frameToBinnedHeatmap(
   let labelsAtBounds = true;
   // The value field of the first frame that contributes cells
   let valueField: Field<number> | undefined;
-  // Numeric Y scale of the first dense frame; source buckets otherwise.
+  // Numeric Y scale of the first frame that has one; source buckets otherwise.
   let yScale: BinnedHeatmapYScale | undefined;
 
   for (const frame of frames) {
     const frameHeatmap =
       frame.meta?.type === 'heatmap-cells'
-        ? cellsToCells(frame, keep)
+        ? cellsToCells(frame, keep, rowsScale)
         : // heatmap-rows (and timeseries-wide reused as rows).
           rowsToCells(frame, series, keep, rowsScale);
 
