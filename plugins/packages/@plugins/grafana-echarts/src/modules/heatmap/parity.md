@@ -43,6 +43,10 @@ can be styled; those options are meaningless for the heatmap cells themselves.
 | —                                                                     | `heatmapColorScale.placement` (Right/Bottom/None visualMap)                                                                                                                                            | ECharts-only              |
 | —                                                                     | per-field `seriesType` cartesian overlay                                                                                                                                                               | ECharts-only              |
 
+The zero bucket of a Prometheus native histogram goes from `-zt` to `zt`. The zero threshold `zt` is 2^-128 by default.
+On a log axis, this bucket ends at or below the bottom of the axis, so its count is not drawn. Core does the same.
+With more than one sparse frame, the frames share one axis bottom. Core draws only the first `heatmap-cells` frame.
+
 The comparison dashboards are `provisioning/dashboards/heatmap-core-parity-*.json` (TestData).
 
 ## Change from core Heatmap

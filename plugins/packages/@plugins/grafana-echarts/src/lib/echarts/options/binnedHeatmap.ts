@@ -8,6 +8,8 @@ import {
   type BinnedHeatmapCell,
   type BinnedHeatmapData,
   formatBucketBound,
+  logCeilExponent,
+  logFloorExponent,
 } from 'lib/echarts/converters/binnedHeatmap';
 import { HEATMAP_VALUE_DIM } from 'lib/echarts/options/constants';
 import { getHeatmapVisualMap } from 'lib/echarts/options/heatmapVisualMap';
@@ -83,7 +85,6 @@ export function getBinnedHeatmapBucketAxis(
   };
 }
 
-const LOG_EPSILON = 1e-9;
 /** Smallest distance between two Y tick labels, in pixels. */
 const LOG_TICK_MIN_SPACING = 36;
 /** Largest number of Y ticks when the plot height is not known. */
@@ -159,12 +160,10 @@ export function getBinnedHeatmapYAxis(
   // snaps out to whole magnitudes of the set or data range, as in core.
   const scale = data.yScale;
   if (scale?.type === 'log') {
-    // The small offset keeps a whole magnitude whole: log(1000) / log(10) is 2.9999999999999996.
-    const log = (value: number) => Math.log(value) / Math.log(scale.log);
     const lo = explicit.min ?? data.yMin;
     const hi = explicit.max ?? data.yMax;
-    const loExp = lo > 0 ? Math.floor(log(lo) + LOG_EPSILON) : undefined;
-    const hiExp = hi > 0 ? Math.ceil(log(hi) - LOG_EPSILON) : undefined;
+    const loExp = lo > 0 ? logFloorExponent(lo, scale.log) : undefined;
+    const hiExp = hi > 0 ? logCeilExponent(hi, scale.log) : undefined;
     const ticks =
       loExp != null && hiExp != null
         ? logTickExponents(loExp, hiExp, plotHeight).map((e) => scale.log ** e)

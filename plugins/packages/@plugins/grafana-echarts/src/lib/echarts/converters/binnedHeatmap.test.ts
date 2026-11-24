@@ -328,6 +328,45 @@ describe('frameToBinnedHeatmap - Prometheus native histogram (sparse heatmap-cel
     expect(result).toMatchObject({ yMin: 8, yMax: 20 });
   });
 
+  it('keeps a floor that is a whole magnitude, on a log 10 scale', () => {
+    // `Math.log(1000) / Math.log(10)` is 2.9999999999999996. The floor is 1000, not 100.
+    const result = frameToBinnedHeatmap([sparseFrame([0, 1000], [2000, 10000])], undefined, {
+      rowsScale: { type: 'log', log: 10 },
+    })!;
+    expect(result.cells.map((cell) => [cell.yStart, cell.yEnd])).toEqual([
+      [1000, 2000],
+      [1000, 10000],
+    ]);
+    expect(result).toMatchObject({ yMin: 1000, yMax: 10000 });
+  });
+
+  describe('with more than one sparse frame', () => {
+    it('uses one floor for all the frames', () => {
+      // The smallest lower bound above 0 is 0.5, in the first frame.
+      const result = frameToBinnedHeatmap([sparseFrame([0.5], [1]), sparseFrame([0, 8], [16, 16])])!;
+      expect(result.yScale).toEqual({ type: 'log', log: 2 });
+      // The bucket from 0 to 16 of the second frame starts at 0.5, not at 8.
+      expect(result.cells.map((cell) => [cell.yStart, cell.yEnd])).toEqual([
+        [0.5, 1],
+        [0.5, 16],
+        [8, 16],
+      ]);
+      expect(result).toMatchObject({ yMin: 0.5, yMax: 16 });
+    });
+
+    it('keeps the axis above 0 when one frame has no lower bound above 0', () => {
+      // The second frame has only a zero bucket and a negative bucket.
+      const result = frameToBinnedHeatmap([sparseFrame([1], [2]), sparseFrame([-1, -2], [4, -1])])!;
+      expect(result.yScale).toEqual({ type: 'log', log: 2 });
+      // The zero bucket starts at the floor of the first frame. The negative bucket is not drawn.
+      expect(result.cells.map((cell) => [cell.yStart, cell.yEnd])).toEqual([
+        [1, 2],
+        [1, 4],
+      ]);
+      expect(result).toMatchObject({ yMin: 1, yMax: 4 });
+    });
+  });
+
   it('keeps every bucket on a linear Y bucket scale', () => {
     const result = frameToBinnedHeatmap([sparseFrame([-2, -1, 1], [-1, 1, 2])], undefined, {
       rowsScale: { type: 'linear' },

@@ -342,7 +342,8 @@ function denseBucketBounds(values: number[], edge: 'min' | 'max', logBase?: numb
 function cellsToCells(
   frame: NumericFrame,
   keep: (value: number | null) => boolean,
-  rowsScale: BinnedHeatmapRowsScale = { type: 'auto' }
+  rowsScale: BinnedHeatmapRowsScale,
+  sparseLogOfFrames: SparseLogScale | undefined
 ): FrameHeatmap {
   const xMin = fieldByName(frame, 'xMin');
   const xMax = fieldByName(frame, 'xMax');
@@ -374,7 +375,8 @@ function cellsToCells(
     ? denseBucketBounds(yEdgeField.values, yEdgeField === yMin ? 'min' : 'max', yLog)
     : undefined;
 
-  const sparseLog = yMin && yMax ? sparseLogScale(yMin, rowsScale) : undefined;
+  // The log scale is one for all sparse frames. A dense frame does not use it.
+  const sparseLog = yMin && yMax ? sparseLogOfFrames : undefined;
 
   const cells: BinnedHeatmapCell[] = [];
   // Distinct Y bucket bounds (cells repeat the same row across X), keyed to
@@ -446,31 +448,60 @@ function cellsToCells(
 /** Default log base of a sparse heatmap-cells frame, as in core Grafana. */
 const SPARSE_LOG_BASE = 2;
 
+/** The log scale of the sparse frames: its base and the bottom of the axis. */
+interface SparseLogScale {
+  base: number;
+  floor: number;
+}
+
 /**
- * The log scale of a sparse heatmap-cells frame, or `undefined` when the frame
- * does not draw on a log scale. Core Grafana draws a sparse frame on a log
+ * The log scale of the sparse heatmap-cells frames, or `undefined` when they
+ * do not draw on a log scale. Core Grafana draws a sparse frame on a log
  * scale, and `rowsFrame.yBucketScale` replaces that scale. The base is the
- * base of `rowsScale`, then the base in the `yMin` field config, then 2.
+ * base of `rowsScale`, then the base in the `yMin` field config of the first
+ * sparse frame, then 2.
  *
- * `floor` is the bottom of the axis: the smallest lower bound above 0, down to
- * a whole magnitude. A frame with no lower bound above 0 keeps one label per
- * bucket bound.
+ * `floor` is the bottom of the axis: the smallest lower bound above 0 in all
+ * the sparse frames, down to a whole magnitude. The cells of all the frames
+ * draw on one axis, so the frames share one floor. With no lower bound above
+ * 0, the frames keep one label per bucket bound.
  * See `prepConfig` in
  * https://github.com/grafana/grafana/blob/main/public/app/plugins/panel/heatmap/utils.ts
  */
-function sparseLogScale(
-  yMin: Field<number>,
-  rowsScale: BinnedHeatmapRowsScale
-): { base: number; floor: number } | undefined {
+function sparseLogScale(frames: DataFrame[], rowsScale: BinnedHeatmapRowsScale): SparseLogScale | undefined {
   if (rowsScale.type === 'linear') {
     return undefined;
   }
-  const lowest = yMin.values.reduce((min, value) => (value > 0 && value < min ? value : min), Infinity);
+  const lowerBounds = frames
+    .filter((frame) => frame.meta?.type === 'heatmap-cells' && fieldByName(frame, 'yMax'))
+    .map((frame) => fieldByName<number>(frame, 'yMin'))
+    .filter((field) => field !== undefined);
+  let lowest = Infinity;
+  for (const field of lowerBounds) {
+    for (const value of field.values) {
+      if (value > 0 && value < lowest) {
+        lowest = value;
+      }
+    }
+  }
   if (!Number.isFinite(lowest)) {
     return undefined;
   }
-  const base = rowsScale.type === 'log' ? rowsScale.log : (fieldLogBase(yMin) ?? SPARSE_LOG_BASE);
-  return { base, floor: base ** Math.floor(Math.log(lowest) / Math.log(base)) };
+  const base = rowsScale.type === 'log' ? rowsScale.log : (fieldLogBase(lowerBounds[0]) ?? SPARSE_LOG_BASE);
+  return { base, floor: base ** logFloorExponent(lowest, base) };
+}
+
+/** Keeps a whole magnitude whole: `Math.log(1000) / Math.log(10)` is 2.9999999999999996. */
+const LOG_EPSILON = 1e-9;
+
+/** The exponent of the whole magnitude of `base` at or below `value`. */
+export function logFloorExponent(value: number, base: number): number {
+  return Math.floor(Math.log(value) / Math.log(base) + LOG_EPSILON);
+}
+
+/** The exponent of the whole magnitude of `base` at or above `value`. */
+export function logCeilExponent(value: number, base: number): number {
+  return Math.ceil(Math.log(value) / Math.log(base) - LOG_EPSILON);
 }
 
 /** Build the keep-predicate for a cell filter. No filter keeps every cell. */
@@ -497,9 +528,10 @@ function cellFilterPredicate(filter?: BinnedHeatmapCellFilter): (value: number |
 export function frameToBinnedHeatmap(
   frames: DataFrame[],
   series: DataFrame[] = frames,
-  { filter, rowsScale }: BinnedHeatmapOptions = {}
+  { filter, rowsScale = { type: 'auto' } }: BinnedHeatmapOptions = {}
 ): BinnedHeatmapData | null {
   const keep = cellFilterPredicate(filter);
+  const sparseLog = sparseLogScale(frames, rowsScale);
   const cells: BinnedHeatmapCell[] = [];
   const bucketByKey = new Map<string, BinnedHeatmapBucket>();
   // X axis is time only when every frame that actually contributes cells uses a
@@ -516,7 +548,7 @@ export function frameToBinnedHeatmap(
   for (const frame of frames) {
     const frameHeatmap =
       frame.meta?.type === 'heatmap-cells'
-        ? cellsToCells(frame, keep, rowsScale)
+        ? cellsToCells(frame, keep, rowsScale, sparseLog)
         : // heatmap-rows (and timeseries-wide reused as rows).
           rowsToCells(frame, series, keep, rowsScale);
 
