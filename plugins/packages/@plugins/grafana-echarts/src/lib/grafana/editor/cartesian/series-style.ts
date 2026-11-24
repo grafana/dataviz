@@ -4,7 +4,9 @@ import { cartesianGraphStylesCategoryName } from 'editor/cartesian';
 import { type EChartsGraphFieldConfig } from 'editor/types';
 
 /**
- * Register the Point size and Show points field settings of core Time series, for overrides only. The panel
+ * Register the Gradient mode, Point size and Show points field settings of core Time series. Gradient mode has no
+ * panel option: line series (`getLineGradientColors`) and the histogram mode (`getHistogramFill`) read it from
+ * each field. Point size and Show points are for overrides only. The panel
  * options set the defaults. A field value wins over the panel option (`resolveFieldStyleOptions`). Line width and
  * Fill opacity are registered by `addCartesianHistogramFieldConfig`, and each mode reads them per field.
  * Core source: https://github.com/grafana/grafana/blob/main/public/app/plugins/panel/timeseries/config.ts
@@ -14,6 +16,13 @@ export function addCartesianSeriesStyleFieldConfig(builder: FieldConfigEditorBui
   const category = [cartesianGraphStylesCategoryName];
   const description = 'Empty uses the panel option.';
   builder
+    .addRadio({
+      path: 'gradientMode',
+      name: 'Gradient mode',
+      category,
+      description: 'The gradient of line series and of histogram bars. Empty and Scheme draw no gradient.',
+      settings: { options: getGraphFieldOptions().fillGradient },
+    })
     .addSliderInput({
       path: 'pointSize',
       name: 'Point size',

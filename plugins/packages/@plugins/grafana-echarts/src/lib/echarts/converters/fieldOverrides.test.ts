@@ -1,5 +1,6 @@
 import { FieldType, toDataFrame } from '@grafana/data';
-import { resolveFieldStyleOptions } from 'lib/echarts/converters/fieldOverrides';
+import { GraphGradientMode } from '@grafana/schema';
+import { resolveFieldGradientMode, resolveFieldStyleOptions } from 'lib/echarts/converters/fieldOverrides';
 import { type PanelOptions } from 'types';
 
 const field = (custom: Record<string, unknown>) =>
@@ -30,5 +31,16 @@ describe('resolveFieldStyleOptions', () => {
 
   it('ignores a value that is not valid', () => {
     expect(resolveFieldStyleOptions(field({ lineWidth: 'x', showPoints: 'sometimes' }), options)).toBe(options);
+  });
+});
+
+describe('resolveFieldGradientMode', () => {
+  it.each(Object.values(GraphGradientMode))('reads the core mode %s', (gradientMode) => {
+    expect(resolveFieldGradientMode(field({ gradientMode }))).toBe(gradientMode);
+  });
+
+  it('reads a field with no mode, or with a mode that is not valid, as None', () => {
+    expect(resolveFieldGradientMode(field({}))).toBe(GraphGradientMode.None);
+    expect(resolveFieldGradientMode(field({ gradientMode: 'rainbow' }))).toBe(GraphGradientMode.None);
   });
 });

@@ -164,10 +164,10 @@ export const plugin = new PanelPlugin<PanelOptions, EChartsGraphFieldConfig>(mak
         },
       });
 
-      // Core Histogram field settings: Stacking, Line width, Fill opacity and Gradient mode.
+      // Core Histogram field settings: Stacking, Line width and Fill opacity.
       addCartesianHistogramFieldConfig(builder);
 
-      // Core Time series Point size and Show points, per field (overrides only).
+      // Core Time series Gradient mode, and Point size and Show points per field (overrides only).
       addCartesianSeriesStyleFieldConfig(builder);
 
       // Register the standard `custom.hideFrom` field config ("Hide in area"

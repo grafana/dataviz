@@ -305,11 +305,31 @@ describe('timeseriesAdapter.translate', () => {
     expect(target.fieldConfig.overrides[0].properties).toEqual([{ id: 'custom.spanNulls', value: spanNulls }]);
   });
 
+  it.each(['none', 'opacity', 'hue', 'scheme'])(
+    'keeps custom.gradientMode %s in the defaults and in an override',
+    (gradientMode) => {
+      const panel = {
+        fieldConfig: {
+          defaults: { custom: { gradientMode } },
+          overrides: [
+            {
+              matcher: { id: 'byName', options: 'a' },
+              properties: [{ id: 'custom.gradientMode', value: gradientMode }],
+            },
+          ],
+        },
+      };
+      const target = translate(panel);
+      expect(target.fieldConfig.defaults.custom.gradientMode).toBe(gradientMode);
+      expect(target.fieldConfig.overrides[0].properties).toEqual([{ id: 'custom.gradientMode', value: gradientMode }]);
+    }
+  );
+
   it('removes an override that has no property of the cartesian panel', () => {
     const panel = {
       fieldConfig: {
         overrides: [
-          { matcher: { id: 'byName', options: 'a' }, properties: [{ id: 'custom.gradientMode', value: 'hue' }] },
+          { matcher: { id: 'byName', options: 'a' }, properties: [{ id: 'custom.fillBelowTo', value: 'b' }] },
         ],
       },
     };
