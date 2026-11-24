@@ -115,6 +115,8 @@ describe('force layout across a notMerge rebuild', () => {
     chart.dispose();
   });
 
+  // This test protects the read of the private `_layouting` field in `isForceLayoutRunning`. Keep it on an ECharts
+  // upgrade: it fails if ECharts renames the field.
   it('completes an animated layout after a rebuild during the animation', () => {
     jest.useFakeTimers();
     try {

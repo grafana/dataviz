@@ -77,6 +77,10 @@ export function readLiveForceLayout(chart: EChartsType): LiveForceLayout {
  * Tell if the graph view still steps an animated layout (`force.layoutAnimation`). The view is not in the public
  * API, thus each step is checked at run time.
  * https://github.com/apache/echarts/blob/master/src/chart/graph/GraphView.ts
+ *
+ * This read has no fallback. If ECharts renames `_layouting`, the result is always false, and a rebuild during an
+ * animated layout freezes the layout before it is complete. The test "completes an animated layout after a rebuild
+ * during the animation" in `forcePositions.integration.test.ts` fails then. Do not remove that test.
  */
 function isForceLayoutRunning(chart: EChartsType, series: object): boolean {
   const getView: unknown = Reflect.get(chart, 'getViewOfSeriesModel');
