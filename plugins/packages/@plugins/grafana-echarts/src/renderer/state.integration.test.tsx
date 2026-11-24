@@ -282,4 +282,17 @@ describe('the state of a stat draw', () => {
     expect(states.at(-1)).toEqual({ state: 'ready', notices: [] });
     expect(statTexts(el)).toEqual(expect.arrayContaining(values.map(String)));
   });
+
+  // A text field is not a series. With all fields (`reduceOptions.fields`), each text field is one cell also.
+  it('does not cut the text fields: 60 cells with all fields', async () => {
+    const hosts = Array.from({ length: 60 }, (_, i) => `host-${i}`);
+    const spec = framesSpec(
+      'smoke-stat',
+      hosts.map((host, i) => ({ name: `s${i}`, type: FieldType.string, values: [host] }))
+    );
+    (spec.panel as Record<string, unknown>).options = { reduceOptions: { calcs: ['lastNotNull'], fields: '/.*/' } };
+    const { el, states } = await draw(spec);
+    expect(states.at(-1)).toEqual({ state: 'ready', notices: [] });
+    expect(statTexts(el)).toEqual(expect.arrayContaining(hosts));
+  });
 });

@@ -10,7 +10,8 @@ panel keeps its options when it changes type.
 The Renderer draws the panel (`src/renderer/panels.ts`). The Renderer keeps the first 50 number fields, and gives
 the `series-truncated` notice for more. With a calculation, each number field is one cell, so the Renderer shows
 50 cells at most. With all values (`reduceOptions.values`), each row is one cell, and only the `limit` option
-sets the number of cells: the Renderer does not cut the rows.
+sets the number of cells: the Renderer does not cut the rows. With all fields (`reduceOptions.fields`), each text
+field is one cell also. A text field is not a series, so the Renderer does not count it and does not cut it.
 
 Demo dashboard: the [stat basics dashboard][db-basics]. Each row has the ECharts panel at the left and the
 core panel at the right, with the same data and options.
