@@ -68,6 +68,11 @@ describe('getBinnedHeatmapBucketAxis', () => {
     expect(formatter(0.5)).toBe('a');
     expect(formatter(1.5)).toBe('b');
   });
+
+  it('hides labels that overlap, but keeps the first and the last label', () => {
+    const axis = getBinnedHeatmapBucketAxis(baseData({ yBuckets: [{ start: 0, end: 1, label: '1' }] }));
+    expect(axis.axisLabel).toMatchObject({ hideOverlap: true, showMinLabel: true, showMaxLabel: true });
+  });
 });
 
 describe('getBinnedHeatmapYAxis', () => {

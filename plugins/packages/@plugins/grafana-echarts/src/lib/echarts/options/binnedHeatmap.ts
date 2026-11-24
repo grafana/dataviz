@@ -27,6 +27,7 @@ import { type CoreHeatmapOptions } from 'types';
  * - split lines to every bucket boundary (so each row is fenced off), and
  * - labels to each bucket's upper edge (`le`/numeric bounds) or midpoint
  *   (ordinal rows labelled by name), formatted from the bucket's own label.
+ *   A label that overlaps another label is not drawn.
  *
  * Uses ECharts `customValues` (value-axis support added in 5.5), so it requires
  * ECharts >= 5.5 (the plugin ships 6.x).
@@ -61,6 +62,14 @@ export function getBinnedHeatmapBucketAxis(
   return {
     axisLabel: {
       customValues: labelValues,
+      // An axis can have more bucket bounds than the labels that fit. ECharts
+      // does not draw a label that overlaps another label. The first and the
+      // last label always show, so the axis keeps its bounds. The ticks stay.
+      // https://echarts.apache.org/en/option.html#yAxis.axisLabel.hideOverlap
+      // https://echarts.apache.org/en/option.html#yAxis.axisLabel.showMinLabel
+      hideOverlap: true,
+      showMinLabel: true,
+      showMaxLabel: true,
       // Only `customValues` are drawn. `grid.containLabel` measures the axis
       // with its default ticks instead, so those get the widest label to
       // reserve enough room.
