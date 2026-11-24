@@ -79,10 +79,19 @@ source and a target on different y-axes. Such a series keeps its fill to the axi
 [cartesian-fill-below-to.json](../../../../provisioning/dashboards/cartesian/cartesian-fill-below-to.json) (ECharts
 and core pairs). Tests: `fill-below-to.canvas.test.tsx`, `fill-below-to.integration.test.tsx`, `fillBelowTo.test.ts`.
 
-With smooth lines, a null in one of the two series starts a new piece of the band. The curve of that piece can be a
-small distance from the curve of the line, because ECharts makes the curve from the points of the piece only. The
-band has the line shape of the source, so a target with another line interpolation does not fit the band exactly.
-The band keeps each point. A dense line that the chart samples (LTTB) can be a small distance from its band.
+The edge of the band can be a small distance from its line in these cases:
+
+- Smooth lines. The chart calculates the value at a time that only one series has, and the point where the lines
+  cross, on the straight segment between two points, not on the curve. Thus two queries with different times, or
+  lines that cross, show the distance also with no null. A null in one of the two series starts a new piece of the
+  band, and ECharts makes the curve of that piece from the points of the piece only.
+- Different line interpolations. The band has the line shape of the source. With a stepped source and a straight
+  target, or with two different step modes, the band has no point where the lines cross. It holds the full gap until
+  the next point, so the fill can show below the target, where the target is above the source.
+- A dense line that the chart samples (LTTB). The band keeps each point.
+
+The option shows for a field that has no `seriesType` override, also in a bar or point panel, where it has no effect:
+the `showIf` of a field config sees only the config of the field.
 
 On a time axis, line and area series stack as in core Time series (`preparePlotData2`), in a group apart from the
 bars. A null in one line, at a row where another line of the stack has a value, adds 0: the line draws on the line

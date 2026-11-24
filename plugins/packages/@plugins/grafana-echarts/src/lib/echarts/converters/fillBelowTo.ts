@@ -1,4 +1,4 @@
-import { type DataFrame, getFieldDisplayName } from '@grafana/data';
+import { type DataFrame, type Field, getFieldDisplayName } from '@grafana/data';
 import { type LineSeriesOption } from 'echarts';
 import { forEachTimeSeriesField } from 'lib/echarts/converters/frames';
 import { getFieldConfigFromField } from 'lib/grafana/fields/fieldConfig';
@@ -25,22 +25,29 @@ export const FILL_BELOW_TO_SERIES_ID = '__fillBelowTo';
  * The "Fill below to" target of each time-axis series, in the order that `timeSeriesToEChartsOption`
  * emits series: the index of the target series, `null` for a target that the data does not have, and
  * `undefined` for a series with no "Fill below to". The target is the first other series whose name,
- * data source display name or display name is the option value, as core.
+ * data source display name or display name is the option value, as core. The result is empty when no
+ * series has a "Fill below to".
  */
 export function resolveFillBelowTo(frames: DataFrame[]): Array<number | null | undefined> {
-  const refs: Array<{ names: Array<string | undefined>; fillBelowTo: unknown }> = [];
+  const refs: Array<{ field: Field; frame: DataFrame; fillBelowTo: unknown }> = [];
   forEachTimeSeriesField(frames, ({ field, frame }) => {
-    const config = getFieldConfigFromField(field);
-    refs.push({
-      names: [field.name, config.displayNameFromDS, getFieldDisplayName(field, frame, frames)],
-      fillBelowTo: config.custom?.fillBelowTo,
-    });
+    refs.push({ field, frame, fillBelowTo: getFieldConfigFromField(field).custom?.fillBelowTo });
   });
+  const isSet = (fillBelowTo: unknown): fillBelowTo is string => typeof fillBelowTo === 'string' && fillBelowTo !== '';
+  // The usual panel has no "Fill below to": it does not pay for the display names.
+  if (!refs.some(({ fillBelowTo }) => isSet(fillBelowTo))) {
+    return [];
+  }
+  const names = refs.map(({ field, frame }) => [
+    field.name,
+    getFieldConfigFromField(field).displayNameFromDS,
+    getFieldDisplayName(field, frame, frames),
+  ]);
   return refs.map(({ fillBelowTo }, i) => {
-    if (typeof fillBelowTo !== 'string' || fillBelowTo === '') {
+    if (!isSet(fillBelowTo)) {
       return undefined;
     }
-    const target = refs.findIndex(({ names }, t) => t !== i && names.includes(fillBelowTo));
+    const target = names.findIndex((fieldNames, t) => t !== i && fieldNames.includes(fillBelowTo));
     return target === -1 ? null : target;
   });
 }

@@ -24,6 +24,11 @@ describe('resolveFillBelowTo', () => {
     ).toEqual([2, undefined, undefined]);
   });
 
+  it('gives an empty result when no series has a Fill below to', () => {
+    // `toEqual` reads `[undefined, undefined]` as `[]`, so the test reads the length.
+    expect(resolveFillBelowTo([frame([{ name: 'a' }, { name: 'b', fillBelowTo: '' }])])).toHaveLength(0);
+  });
+
   it('finds the target by display name and by data source display name', () => {
     const frames = [
       frame([

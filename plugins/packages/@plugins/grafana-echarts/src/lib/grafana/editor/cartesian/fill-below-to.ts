@@ -17,7 +17,9 @@ export function addCartesianFillBelowToFieldConfig(builder: FieldConfigEditorBui
     category: [cartesianGraphStylesCategoryName],
     hideFromDefaults: true,
     settings: { filter: (field: Field) => field.type === FieldType.number },
-    // Only line series read it. A field-config `showIf` sees only the config of this field.
+    // Only line series read it. A field-config `showIf` sees only the config of this field, so a panel-level
+    // series type does not hide it: with a bar or point panel and no `seriesType` override, the option shows
+    // and has no effect.
     showIf: (config) => config.seriesType === undefined || config.seriesType === 'Auto' || config.seriesType === 'line',
   });
 }
