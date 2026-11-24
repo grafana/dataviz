@@ -44,6 +44,34 @@ export const leRowsFrame = toDataFrame({
 });
 
 /**
+ * `le` rows with more buckets than the labels that fit on the Y axis: bounds
+ * that grow by 1.3 from 0.001, and a `+Inf` top bucket.
+ */
+export const manyLeRowsFrame = (buckets = 60) =>
+  toDataFrame({
+    meta: { type: DataFrameType.HeatmapRows },
+    fields: [
+      { name: 'time', type: FieldType.time, values: times },
+      ...Array.from({ length: buckets }, (_, i) => ({
+        name: `b${i}`,
+        type: FieldType.number,
+        values: [i, i + 1, i + 2],
+        labels: { le: i === buckets - 1 ? '+Inf' : String(Number((0.001 * 1.3 ** i).toPrecision(3))) },
+      })),
+    ],
+  });
+
+/** The Y of each axis label of the last paint, in whole pixels, top first. */
+export const axisLabelYs = (events: CanvasEvent[]): Array<{ text: string; y: number }> => {
+  const lastPaint = events.map((event) => event.type).lastIndexOf('clearRect');
+  return events
+    .slice(lastPaint === -1 ? 0 : lastPaint)
+    .filter((event) => event.type === 'fillText')
+    .map((event) => ({ text: String(event.props?.text), y: Math.round(event.transform?.[5] ?? 0) }))
+    .sort((a, b) => a.y - b.y);
+};
+
+/**
  * Dense heatmap-cells in the shape of core's "Calculate from data" output: an
  * `xMin` time, a `yMin` lower bound per bucket and a `Count`. Buckets 1, 2, 4, 8.
  */
@@ -90,7 +118,7 @@ export const sparseCellsFrame = (zeroBucket = false) => {
   });
 };
 
-type CanvasEvent = { type: string; props?: Record<string, unknown> };
+type CanvasEvent = { type: string; props?: Record<string, unknown>; transform?: number[] };
 export interface CellRect {
   x: number;
   y: number;
