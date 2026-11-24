@@ -22,6 +22,7 @@ import { addCartesianBarFillOpacityOptions } from 'lib/grafana/editor/cartesian/
 import { addCartesianBarRadiusOptions } from 'lib/grafana/editor/cartesian/bar-radius';
 import { addCartesianBarWidthOptions } from 'lib/grafana/editor/cartesian/bar-width';
 import { addCartesianBarsIncludeZeroOptions } from 'lib/grafana/editor/cartesian/bars-include-zero';
+import { addCartesianFillBelowToFieldConfig } from 'lib/grafana/editor/cartesian/fill-below-to';
 import { addCartesianFillOpacityOptions } from 'lib/grafana/editor/cartesian/fill-opacity';
 import { addCartesianHistogramFieldConfig, addCartesianHistogramOptions } from 'lib/grafana/editor/cartesian/histogram';
 import { addCartesianSeriesStyleFieldConfig } from 'lib/grafana/editor/cartesian/series-style';
@@ -141,6 +142,9 @@ export const plugin = new PanelPlugin<PanelOptions, EChartsGraphFieldConfig>(mak
 
       // Core "Connect null values" of line series: Never, Always or a gap threshold.
       addCartesianSpanNullsFieldConfig(builder);
+
+      // Core "Fill below to" of line series: the fill stops at another series. Override only.
+      addCartesianFillBelowToFieldConfig(builder);
 
       // Core "Line interpolation" of line series: Linear, Smooth, Step before or Step after.
       addCartesianLineInterpolationFieldConfig(builder);

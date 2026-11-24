@@ -14,8 +14,8 @@ different render type.
 Core Time series exposes the full graph field config (draw style, line width,
 fill, points, stacking, per-axis config) plus the standard field-config set. This
 module keeps the standard field-config set and most of the graph field config:
-axis, line style, line interpolation, line width, fill opacity, points, stacking and
-Connect null values. The gaps are gradient mode, fill below to, bar alignment and
+axis, line style, line interpolation, line width, fill opacity, fill below to, points, stacking and
+Connect null values. The gaps are gradient mode, bar alignment and
 Disconnect values (see "Graph styles"). The module also reads the core option paths,
 so a switch from core Time series keeps the settings ([panelChange](../../../lib/grafana/panelChange/timeseries.ts)).
 
@@ -45,7 +45,7 @@ so a switch from core Time series keeps the settings ([panelChange](../../../lib
 | Line width, fill opacity                                                   | `lineWidth`, `fillOpacity` (panel options, Default tier, and per field) -> `lineStyle.width`, `areaStyle.opacity` | Supported     |
 | Line style (solid, dash, dots)                                             | per-field `lineStyle` (`LineStyleEditor`)                                                                         | Supported     |
 | Gradient mode                                                              | none (the chart draws no gradient on lines; histogram only)                                                       | Not supported |
-| Fill below to                                                              | none                                                                                                              | Not supported |
+| Fill below to                                                              | per-field `fillBelowTo` (override only): a band of two hidden stacked line series; not for stacked series         | Partial       |
 | Bar alignment                                                              | none (each bar is at the center of its time)                                                                      | Not supported |
 | Transform (Negative Y)                                                     | per-field `transform`; Constant is not supported                                                                  | Partial       |
 | Connect null values                                                        | per-field `spanNulls` (Default tier): `true` -> `connectNulls`; a threshold (ms) spans shorter gaps               | Supported     |
@@ -63,6 +63,14 @@ ECharts series data, and the tooltip maps each point back to its frame row. The 
 category axis, a threshold is not supported: the line breaks at each null, and the panel shows a warning notice.
 Dashboard: [cartesian-span-nulls.json](../../../../provisioning/dashboards/cartesian/cartesian-span-nulls.json)
 (ECharts and core pairs). Tests: `span-nulls.canvas.test.tsx`, `span-nulls.integration.test.tsx`, `spanNulls.test.ts`.
+
+Fill below to moves the fill of a line series from the axis to another series, as the uPlot band of core. ECharts has
+no band between two series, so the chart adds two hidden line series in one stack: the values of the target, and the
+difference to the source with the fill. With no Fill opacity, the band uses 35, as core. The band has a value only
+where the two series have a value at the same time, and a fill only where the source is above the target. A series in a stack, a series on a category axis and a bar or
+point series get no band. Dashboard:
+[cartesian-fill-below-to.json](../../../../provisioning/dashboards/cartesian/cartesian-fill-below-to.json) (ECharts
+and core pairs). Tests: `fill-below-to.integration.test.tsx`, `fillBelowTo.test.ts`.
 
 On a time axis, line and area series stack as in core Time series (`preparePlotData2`), in a group apart from the
 bars. A null in one line, at a row where another line of the stack has a value, adds 0: the line draws on the line
@@ -86,7 +94,7 @@ byValue + bySeries).
 
 - ECharts-only: a single panel can mix cartesian render types per field (e.g. one
   field as `bar` over others as `line`) via the `seriesType` override.
-- The remaining gaps are gradient mode, fill below to, bar alignment, Disconnect values,
+- The remaining gaps are gradient mode, bar alignment, Disconnect values,
   the symlog scale, Show values on points, annotation clustering and annotation edit/delete.
   The source of truth for a switch from core Time series is
   [capabilities/timeseries.json](../../../lib/grafana/panelChange/capabilities/timeseries.json).

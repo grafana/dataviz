@@ -35,6 +35,7 @@ import {
   multiValueCartesianToEChartsOption,
   resolveMultiValueSources,
 } from 'lib/echarts/converters/multiValueCartesian';
+import { applyFillBelowTo, resolveFillBelowTo } from 'lib/echarts/converters/fillBelowTo';
 import { getDrawnSeries, isTimeSeriesStacked, timeSeriesToEChartsOption } from 'lib/echarts/converters/timeSeries';
 import { getCartesianGrid, getTimeCartesianGrid } from 'lib/echarts/grid/grid';
 import { ANNOTATION_LANE_SIZE, buildAnnotationMarkerSeries } from 'lib/echarts/options/annotationMarkers';
@@ -140,7 +141,8 @@ function buildTimeOption(
       multiLane: annotationDisplay.multiLane,
     }),
   ].filter((entry) => entry != null);
-  const series = [...thresholdSeries, ...annotationSeries];
+  // The "Fill below to" bands go after the data series, for the same reason.
+  const series = [...applyFillBelowTo(thresholdSeries, resolveFillBelowTo(timeCtx.frames)), ...annotationSeries];
 
   // Pin the time axis to the dashboard range so gaps in this panel's data still
   // align with sibling panels sharing the same range. Labels are formatted via
