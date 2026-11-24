@@ -63,7 +63,8 @@ export function addCoreHeatmapOptions(builder: PanelOptionsEditorBuilder<PanelOp
       id: 'rowsFrame.yBucketScale',
       path: 'rowsFrame.yBucketScale',
       name: 'Y bucket scale',
-      description: 'For bucketed data. Auto draws every bucket at the same height.',
+      description:
+        'For bucketed data. Auto draws every bucket at the same height. For sparse cells, Auto is a log 2 scale.',
       category: yAxisCategory,
       editor: ScaleEditor,
       settings: { allowAuto: true },
