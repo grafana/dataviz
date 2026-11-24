@@ -49,7 +49,9 @@ The comparison dashboards are `provisioning/dashboards/heatmap-core-parity-*.jso
 
 Grafana does not keep the options of the previous panel type in a type change. The panel change handler
 ([panelChange.ts](./panelChange.ts)) copies the options of a core Heatmap panel as follows. It keeps each other
-option that the panel has at that time, for example the `heatmapLayout` of a suggestion.
+option that the panel has at that time, for example the `heatmapLayout` of a suggestion. The mapping is the
+adapter ([panelChange/heatmap.ts](../../lib/grafana/panelChange/heatmap.ts)). The status of each setting is in
+[capabilities/heatmap.json](../../lib/grafana/panelChange/capabilities/heatmap.json).
 
 | Core option                                                                 | ECharts option                | Decision                                                                                                                                                                    |
 | --------------------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
