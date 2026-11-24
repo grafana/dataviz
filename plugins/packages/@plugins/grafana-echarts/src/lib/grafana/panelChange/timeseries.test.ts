@@ -325,12 +325,17 @@ describe('timeseriesAdapter.translate', () => {
     }
   );
 
+  // Fill below to (#121): the override goes to the same path, with the name of the target series.
+  it('keeps an override of custom.fillBelowTo', () => {
+    const properties = [{ id: 'custom.fillBelowTo', value: 'min' }];
+    const panel = { fieldConfig: { overrides: [{ matcher: { id: 'byName', options: 'max' }, properties }] } };
+    expect(translate(panel).fieldConfig.overrides[0].properties).toEqual(properties);
+  });
+
   it('removes an override that has no property of the cartesian panel', () => {
     const panel = {
       fieldConfig: {
-        overrides: [
-          { matcher: { id: 'byName', options: 'a' }, properties: [{ id: 'custom.fillBelowTo', value: 'b' }] },
-        ],
+        overrides: [{ matcher: { id: 'byName', options: 'a' }, properties: [{ id: 'custom.barAlignment', value: 1 }] }],
       },
     };
     expect(translate(panel).fieldConfig.overrides).toEqual([]);

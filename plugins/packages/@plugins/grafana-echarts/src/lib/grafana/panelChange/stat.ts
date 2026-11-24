@@ -5,6 +5,7 @@ import type { FieldConfigSource, MatcherConfig } from '@grafana/data';
 
 import capabilityFile from './capabilities/stat.json';
 import { toCapability } from './capabilityFile';
+import { isObject, pick } from './objects';
 import type { CoreOverride, CorePanel, ImportAdapter } from './types';
 
 const TARGET = 'grafana-echartsstat-panel';
@@ -42,15 +43,8 @@ const STANDARD_KEYS = [
 /** The status of each Stat setting, from capabilities/stat.json. */
 export const statCapability = toCapability(capabilityFile);
 
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
 /** A field matcher: https://grafana.com/docs/grafana/latest/panels-visualizations/configure-overrides/ */
 const isMatcher = (value: unknown): value is MatcherConfig => isObject(value) && typeof value.id === 'string';
-
-/** A copy of each present key of `from` in `keys`. */
-const pick = (from: Record<string, unknown>, keys: string[]) =>
-  Object.fromEntries(keys.filter((key) => from[key] !== undefined).map((key) => [key, structuredClone(from[key])]));
 
 /** The overrides with the standard properties. An override with no such property is left out. */
 const translateOverrides = (overrides: CoreOverride[]): FieldConfigSource['overrides'] =>

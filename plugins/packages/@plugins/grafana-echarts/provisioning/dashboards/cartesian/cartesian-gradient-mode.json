@@ -271,6 +271,77 @@
     },
     {
       "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+      "description": "Gradient mode Opacity, fill opacity 50. An override gives a the option Fill below to b. The band between a and b has the gradient of a. The fill of b goes to the axis.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "gradientMode": "opacity" } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "a" },
+            "properties": [{ "id": "custom.fillBelowTo", "value": "b" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "id": 11,
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "seriesType": "line",
+        "lineWidth": 2,
+        "fillOpacity": 50,
+        "performance": { "showPoints": "never" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+          "refId": "A",
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225600000, 1767226500000, 1767227400000, 1767228300000, 1767229200000, 1767230100000, 1767231000000, 1767231900000, 1767232800000, 1767233700000, 1767234600000, 1767235500000, 1767236400000, 1767237300000]}, {\"name\": \"a\", \"type\": \"number\", \"values\": [20, 25, 30, 28, 35, 30, 32, 38, 25, 30, 34, 40, 36, 35]}, {\"name\": \"b\", \"type\": \"number\", \"values\": [5, 8, 6, 9, 4, 7, 5, 6, 8, 6, 7, 9, 5, 9]}]}]"
+        }
+      ],
+      "title": "ECharts: Opacity with Fill below to",
+      "type": "grafana-echartscartesian-panel"
+    },
+    {
+      "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+      "description": "Gradient mode Opacity, fill opacity 50. An override gives a the option Fill below to b. The band between a and b has the gradient of a. The fill of b goes to the axis.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 50,
+            "gradientMode": "opacity",
+            "showPoints": "never"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "a" },
+            "properties": [{ "id": "custom.fillBelowTo", "value": "b" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "id": 12,
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+          "refId": "A",
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225600000, 1767226500000, 1767227400000, 1767228300000, 1767229200000, 1767230100000, 1767231000000, 1767231900000, 1767232800000, 1767233700000, 1767234600000, 1767235500000, 1767236400000, 1767237300000]}, {\"name\": \"a\", \"type\": \"number\", \"values\": [20, 25, 30, 28, 35, 30, 32, 38, 25, 30, 34, 40, 36, 35]}, {\"name\": \"b\", \"type\": \"number\", \"values\": [5, 8, 6, 9, 4, 7, 5, 6, 8, 6, 7, 9, 5, 9]}]}]"
+        }
+      ],
+      "title": "Core: Opacity with Fill below to",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
       "description": "Known difference. Gradient mode Scheme with the color scheme From thresholds, fill opacity 50. Core colors the lines and the fills by the thresholds. The ECharts panel draws no gradient.",
       "fieldConfig": {
         "defaults": {
@@ -287,7 +358,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
       "id": 9,
       "options": {
         "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] },
@@ -332,7 +403,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
       "id": 10,
       "options": {
         "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] },

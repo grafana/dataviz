@@ -5,6 +5,7 @@ import type { FieldConfigSource, MatcherConfig } from '@grafana/data';
 
 import capabilityFile from './capabilities/timeseries.json';
 import { toCapability } from './capabilityFile';
+import { isObject, pick } from './objects';
 import type { CoreOverride, CorePanel, ImportAdapter } from './types';
 
 const TARGET = 'grafana-echartscartesian-panel';
@@ -40,6 +41,7 @@ const PASSTHROUGH_CUSTOM_KEYS = [
   'axisSoftMax',
   'axisSoftMin',
   'axisWidth',
+  'fillBelowTo',
   'gradientMode',
   'hideFrom',
   'lineStyle',
@@ -71,9 +73,6 @@ const CORE_DEFAULTS = { drawStyle: 'line', lineWidth: 1, fillOpacity: 0, pointSi
 /** Core `drawStyle` to the cartesian `seriesType`. */
 const SERIES_TYPES: Record<string, string> = { line: 'line', bars: 'bar', points: 'scatter' };
 
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
 /** A field matcher: https://grafana.com/docs/grafana/latest/panels-visualizations/configure-overrides/ */
 const isMatcher = (value: unknown): value is MatcherConfig => isObject(value) && typeof value.id === 'string';
 
@@ -82,10 +81,6 @@ const stackingMode = (value: unknown) => (isObject(value) && typeof value.mode =
 
 /** The group of a core `custom.stacking` value. Core uses the group `A` when it is missing. */
 const stackingGroup = (value: unknown) => (isObject(value) && typeof value.group === 'string' ? value.group : 'A');
-
-/** A copy of each present key of `from` in `keys`. */
-const pick = (from: Record<string, unknown>, keys: string[]) =>
-  Object.fromEntries(keys.filter((key) => from[key] !== undefined).map((key) => [key, structuredClone(from[key])]));
 
 /** The override properties with the same meaning on the cartesian panel. */
 const translateProperty = (id: string, value: unknown, panelMode: string): Array<{ id: string; value: unknown }> => {

@@ -149,8 +149,7 @@
       "status": "supported"
     },
     "custom.fillBelowTo": {
-      "status": "unsupported",
-      "note": "Fill below to is not supported."
+      "status": "supported"
     },
     "custom.showPoints": {
       "status": "supported"

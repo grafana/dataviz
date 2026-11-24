@@ -1,0 +1,110 @@
+{
+  "source": "heatmap",
+  "target": "grafana-echartsheatmap-panel",
+  "options": {
+    "calculate": {
+      "status": "supported"
+    },
+    "calculation": {
+      "status": "supported"
+    },
+    "cellGap": {
+      "status": "supported"
+    },
+    "filterValues": {
+      "status": "supported"
+    },
+    "yAxis": {
+      "status": "supported"
+    },
+    "yAxis.axisPlacement": {
+      "status": "cosmetic",
+      "values": {
+        "left": "supported"
+      },
+      "note": "The Y axis is on the left."
+    },
+    "yAxis.axisWidth": {
+      "status": "cosmetic",
+      "note": "The chart sets the width of the Y axis."
+    },
+    "yAxis.axisLabel": {
+      "status": "cosmetic",
+      "values": {
+        "": "supported"
+      },
+      "note": "The Y axis has no label."
+    },
+    "rowsFrame": {
+      "status": "supported"
+    },
+    "rowsFrame.layout": {
+      "status": "cosmetic",
+      "values": {
+        "auto": "supported"
+      },
+      "note": "The chart sets the tick alignment."
+    },
+    "rowsFrame.value": {
+      "status": "cosmetic",
+      "note": "The tooltip has no value name."
+    },
+    "color": {
+      "status": "supported"
+    },
+    "color.scheme": {
+      "status": "cosmetic",
+      "values": {
+        "Spectral": "supported",
+        "Turbo": "supported",
+        "Blues": "supported",
+        "Magma": "supported"
+      },
+      "ignoredWhen": {
+        "options.color.mode": ["opacity"]
+      },
+      "note": "Each other scheme has no gradient. The chart uses the Spectral gradient."
+    },
+    "color.steps": {
+      "status": "cosmetic",
+      "note": "The color scale is continuous."
+    },
+    "color.reverse": {
+      "status": "cosmetic",
+      "values": {
+        "false": "supported"
+      },
+      "note": "The chart does not reverse the gradient."
+    },
+    "cellValues": {
+      "status": "cosmetic",
+      "note": "The cell values have no unit and no decimals setting."
+    },
+    "legend": {
+      "status": "supported",
+      "note": "The legend of core Heatmap is the color scale. `show` and `placement` go to `heatmapColorScale.placement`."
+    },
+    "tooltip": {
+      "status": "supported"
+    },
+    "tooltip.yHistogram": {
+      "status": "cosmetic",
+      "values": {
+        "false": "supported"
+      },
+      "note": "The tooltip has no histogram."
+    },
+    "tooltip.showColorScale": {
+      "status": "cosmetic",
+      "values": {
+        "false": "supported"
+      },
+      "note": "The tooltip has no color scale."
+    },
+    "exemplars.color": {
+      "status": "cosmetic",
+      "note": "The chart does not read the exemplar color."
+    }
+  },
+  "fieldConfig": {}
+}

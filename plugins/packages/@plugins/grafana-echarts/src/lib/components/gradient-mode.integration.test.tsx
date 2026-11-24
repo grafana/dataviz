@@ -13,17 +13,21 @@ import { getComponent, getSeriesCanvasEvents } from 'test/panel';
 const START = 1783137094497;
 const times = [0, 1, 2, 3].map((i) => START + i * 30 * 60_000);
 
-/** Two line series. `b` has values 10 times the values of `a`, so the two lines have different bounding boxes. */
+/**
+ * Two line series. `b` has values 10 times the values of `a`, so the two lines have different bounding boxes.
+ * `custom` is the field config of the two series. `customB` replaces it for `b`.
+ */
 const renderLines = async (
   custom: Record<string, unknown>,
   fillOpacity: number,
-  beforeCapture?: (chart: EChartsType) => void
+  beforeCapture?: (chart: EChartsType) => void,
+  customB = custom
 ) => {
   const frame = toDataFrame({
     fields: [
       { name: 'time', type: FieldType.time, values: times },
       { name: 'a', type: FieldType.number, values: [1, 3, 2, 4], config: { custom } },
-      { name: 'b', type: FieldType.number, values: [10, 30, 20, 40], config: { custom } },
+      { name: 'b', type: FieldType.number, values: [10, 30, 20, 40], config: { custom: customB } },
     ],
   });
   const { container, unmount } = render(
@@ -86,6 +90,15 @@ describe('cartesian line gradient mode', () => {
       expect(events).toEqual((await renderLines({}, 50)).events);
     }
   );
+
+  // Core "Fill below to" (#121) draws the fill of the series as a band to another series, with the same gradient.
+  // `a` has no fill, and the line of Opacity is solid, so each gradient of the render is from the band of `b`.
+  it('fills a Fill below to band with the Opacity gradient of its series, over the plot', async () => {
+    const band = { gradientMode: GraphGradientMode.Opacity, fillBelowTo: 'a' };
+    const { gradients, edges } = await renderLines({ fillOpacity: 0 }, 50, undefined, band);
+    expect(gradients.length).toBeGreaterThanOrEqual(1);
+    expect(edges).toEqual(PLOT_EDGES);
+  });
 
   it('sizes the gradient to the plot again after a resize', async () => {
     const before = await renderLines({ gradientMode: GraphGradientMode.Opacity }, 50);
