@@ -14,8 +14,8 @@ different render type.
 Core Time series exposes the full graph field config (draw style, line width,
 fill, points, stacking, per-axis config) plus the standard field-config set. This
 module keeps the standard field-config set and most of the graph field config:
-axis, line style, line interpolation, line width, fill opacity, points, stacking and
-Connect null values. The gaps are gradient mode, fill below to, bar alignment and
+axis, line style, line interpolation, line width, fill opacity, fill below to, points, stacking and
+Connect null values. The gaps are gradient mode, bar alignment and
 Disconnect values (see "Graph styles"). The module also reads the core option paths,
 so a switch from core Time series keeps the settings ([panelChange](../../../lib/grafana/panelChange/timeseries.ts)).
 
@@ -39,30 +39,59 @@ so a switch from core Time series keeps the settings ([panelChange](../../../lib
 
 ## Graph styles (core custom field config)
 
-| Core Grafana option                                                        | ECharts equivalent                                                                                                | Status        |
-| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------- |
-| Style (lines/bars/points), line interpolation                              | `seriesType` (line/bar/scatter); per-field `lineInterpolation` -> ECharts `smooth` / `step`                       | Supported     |
-| Line width, fill opacity                                                   | `lineWidth`, `fillOpacity` (panel options, Default tier, and per field) -> `lineStyle.width`, `areaStyle.opacity` | Supported     |
-| Line style (solid, dash, dots)                                             | per-field `lineStyle` (`LineStyleEditor`)                                                                         | Supported     |
-| Gradient mode                                                              | none (the chart draws no gradient on lines; histogram only)                                                       | Not supported |
-| Fill below to                                                              | none                                                                                                              | Not supported |
-| Bar alignment                                                              | none (each bar is at the center of its time)                                                                      | Not supported |
-| Transform (Negative Y)                                                     | per-field `transform`; Constant is not supported                                                                  | Partial       |
-| Connect null values                                                        | per-field `spanNulls` (Default tier): `true` -> `connectNulls`; a threshold (ms) spans shorter gaps               | Supported     |
-| Disconnect values                                                          | none                                                                                                              | Not supported |
-| Show points, point size                                                    | `showPoints` -> `series.showSymbol`, `pointSize` -> `symbolSize` (Default tier, and per field)                    | Supported     |
-| Stack series                                                               | panel `stacking` (none/normal/percent), per-field `stackSeries` and `stackGroup` (bars; lines on a time axis)     | Supported     |
-| Axis placement                                                             | per-field `axisPlacement`                                                                                         | Supported     |
-| Axis: label, width, soft min/max, centered zero, color, border, grid lines | `commonOptionsBuilder.addAxisConfig`, read in `buildCartesianYAxes`                                               | Supported     |
-| Axis: scale (linear, log)                                                  | per-field `scaleDistribution`; symlog draws as linear                                                             | Partial       |
-| Show thresholds (thresholds style)                                         | per-field `thresholdsStyle.mode`; the `series` mode does not color the series                                     | Partial       |
-| Hide in area (viz/legend/tooltip)                                          | `custom.hideFrom` (via `addHideFrom`)                                                                             | Partial       |
+| Core Grafana option                                                        | ECharts equivalent                                                                                                    | Status        |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------- |
+| Style (lines/bars/points), line interpolation                              | `seriesType` (line/bar/scatter); per-field `lineInterpolation` -> ECharts `smooth` / `step`                           | Supported     |
+| Line width, fill opacity                                                   | `lineWidth`, `fillOpacity` (panel options, Default tier, and per field) -> `lineStyle.width`, `areaStyle.opacity`     | Supported     |
+| Line style (solid, dash, dots)                                             | per-field `lineStyle` (`LineStyleEditor`)                                                                             | Supported     |
+| Gradient mode                                                              | none (the chart draws no gradient on lines; histogram only)                                                           | Not supported |
+| Fill below to                                                              | per-field `fillBelowTo` (override only): a band of two hidden stacked line series; not for stacked series or two axes | Partial       |
+| Bar alignment                                                              | none (each bar is at the center of its time)                                                                          | Not supported |
+| Transform (Negative Y)                                                     | per-field `transform`; Constant is not supported                                                                      | Partial       |
+| Connect null values                                                        | per-field `spanNulls` (Default tier): `true` -> `connectNulls`; a threshold (ms) spans shorter gaps                   | Supported     |
+| Disconnect values                                                          | none                                                                                                                  | Not supported |
+| Show points, point size                                                    | `showPoints` -> `series.showSymbol`, `pointSize` -> `symbolSize` (Default tier, and per field)                        | Supported     |
+| Stack series                                                               | panel `stacking` (none/normal/percent), per-field `stackSeries` and `stackGroup` (bars; lines on a time axis)         | Supported     |
+| Axis placement                                                             | per-field `axisPlacement`                                                                                             | Supported     |
+| Axis: label, width, soft min/max, centered zero, color, border, grid lines | `commonOptionsBuilder.addAxisConfig`, read in `buildCartesianYAxes`                                                   | Supported     |
+| Axis: scale (linear, log)                                                  | per-field `scaleDistribution`; symlog draws as linear                                                                 | Partial       |
+| Show thresholds (thresholds style)                                         | per-field `thresholdsStyle.mode`; the `series` mode does not color the series                                         | Partial       |
+| Hide in area (viz/legend/tooltip)                                          | `custom.hideFrom` (via `addHideFrom`)                                                                                 | Partial       |
 
 Connect null values follows core `nullToUndefThreshold`. A threshold leaves the connected null rows out of the
 ECharts series data, and the tooltip maps each point back to its frame row. The frame values do not change. On a
 category axis, a threshold is not supported: the line breaks at each null, and the panel shows a warning notice.
 Dashboard: [cartesian-span-nulls.json](../../../../provisioning/dashboards/cartesian/cartesian-span-nulls.json)
 (ECharts and core pairs). Tests: `span-nulls.canvas.test.tsx`, `span-nulls.integration.test.tsx`, `spanNulls.test.ts`.
+
+Fill below to moves the fill of a line series from the axis to another series, as the uPlot band of core. ECharts has
+no band between two series, so the chart adds two hidden line series in one stack: the values of the target, and the
+difference to the source with the fill. With no Fill opacity, the band uses 35, as core. The band has a fill only
+where the source is above the target. A source whose target is not in the data has no fill, as core.
+
+The band has a point at each time of the source and of the target. At a time that only one series has, the value of
+the other series is the value on its line (straight or stepped). Thus two queries with different times get a band
+that follows the two lines, as the joined frame of core. The band has no value before the first point or after the
+last point of a series, and at a null that the line does not connect.
+
+The chart cannot draw a band for a series in a stack, a series on a category axis, a bar or point series, and a
+source and a target on different y-axes. Such a series keeps its fill to the axis. Dashboard:
+[cartesian-fill-below-to.json](../../../../provisioning/dashboards/cartesian/cartesian-fill-below-to.json) (ECharts
+and core pairs). Tests: `fill-below-to.canvas.test.tsx`, `fill-below-to.integration.test.tsx`, `fillBelowTo.test.ts`.
+
+The edge of the band can be a small distance from its line in these cases:
+
+- Smooth lines. The chart calculates the value at a time that only one series has, and the point where the lines
+  cross, on the straight segment between two points, not on the curve. Thus two queries with different times, or
+  lines that cross, show the distance also with no null. A null in one of the two series starts a new piece of the
+  band, and ECharts makes the curve of that piece from the points of the piece only.
+- Different line interpolations. The band has the line shape of the source. With a stepped source and a straight
+  target, or with two different step modes, the band has no point where the lines cross. It holds the full gap until
+  the next point, so the fill can show below the target, where the target is above the source.
+- A dense line that the chart samples (LTTB). The band keeps each point.
+
+The option shows for a field that has no `seriesType` override, also in a bar or point panel, where it has no effect:
+the `showIf` of a field config sees only the config of the field.
 
 On a time axis, line and area series stack as in core Time series (`preparePlotData2`), in a group apart from the
 bars. A null in one line, at a row where another line of the stack has a value, adds 0: the line draws on the line
@@ -86,7 +115,7 @@ byValue + bySeries).
 
 - ECharts-only: a single panel can mix cartesian render types per field (e.g. one
   field as `bar` over others as `line`) via the `seriesType` override.
-- The remaining gaps are gradient mode, fill below to, bar alignment, Disconnect values,
+- The remaining gaps are gradient mode, bar alignment, Disconnect values,
   the symlog scale, Show values on points, annotation clustering and annotation edit/delete.
   The source of truth for a switch from core Time series is
   [capabilities/timeseries.json](../../../lib/grafana/panelChange/capabilities/timeseries.json).

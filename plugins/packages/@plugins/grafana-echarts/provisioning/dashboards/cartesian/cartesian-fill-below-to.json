@@ -1,0 +1,418 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+      "description": "Override on max: Fill below to min. No Fill opacity, so the band uses the default opacity (35).",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": {} },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "max" },
+            "properties": [{ "id": "custom.fillBelowTo", "value": "min" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "seriesType": "line"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+          "refId": "A",
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225600000, 1767226500000, 1767227400000, 1767228300000, 1767229200000, 1767230100000, 1767231000000, 1767231900000, 1767232800000, 1767233700000, 1767234600000, 1767235500000, 1767236400000, 1767237300000]}, {\"name\": \"max\", \"type\": \"number\", \"values\": [40, 46, 52, 48, 55, 61, 58, 50, 47, 53, 60, 57, 49, 45]}, {\"name\": \"avg\", \"type\": \"number\", \"values\": [30, 34, 39, 36, 41, 45, 43, 38, 35, 40, 44, 42, 37, 33]}, {\"name\": \"min\", \"type\": \"number\", \"values\": [20, 23, 27, 25, 28, 31, 29, 26, 24, 27, 30, 28, 25, 22]}]}]"
+        }
+      ],
+      "title": "ECharts: max fills below to min",
+      "type": "grafana-echartscartesian-panel"
+    },
+    {
+      "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+      "description": "Override on max: Fill below to min. No Fill opacity, so the band uses the default opacity (35).",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line" } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "max" },
+            "properties": [{ "id": "custom.fillBelowTo", "value": "min" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+          "refId": "A",
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225600000, 1767226500000, 1767227400000, 1767228300000, 1767229200000, 1767230100000, 1767231000000, 1767231900000, 1767232800000, 1767233700000, 1767234600000, 1767235500000, 1767236400000, 1767237300000]}, {\"name\": \"max\", \"type\": \"number\", \"values\": [40, 46, 52, 48, 55, 61, 58, 50, 47, 53, 60, 57, 49, 45]}, {\"name\": \"avg\", \"type\": \"number\", \"values\": [30, 34, 39, 36, 41, 45, 43, 38, 35, 40, 44, 42, 37, 33]}, {\"name\": \"min\", \"type\": \"number\", \"values\": [20, 23, 27, 25, 28, 31, 29, 26, 24, 27, 30, 28, 25, 22]}]}]"
+        }
+      ],
+      "title": "Core: max fills below to min",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+      "description": "Override on a: Fill below to b, Fill opacity 60. The lines cross: the band is only where a is above b. b has Fill opacity 10 to the axis.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "fillOpacity": 10 } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "a" },
+            "properties": [
+              { "id": "custom.fillBelowTo", "value": "b" },
+              { "id": "custom.fillOpacity", "value": 60 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "seriesType": "line"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+          "refId": "A",
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225600000, 1767226500000, 1767227400000, 1767228300000, 1767229200000, 1767230100000, 1767231000000, 1767231900000, 1767232800000, 1767233700000, 1767234600000, 1767235500000, 1767236400000, 1767237300000]}, {\"name\": \"a\", \"type\": \"number\", \"values\": [10, 18, 26, 34, 40, 44, 40, 32, 24, 16, 12, 20, 30, 38]}, {\"name\": \"b\", \"type\": \"number\", \"values\": [30, 30, 28, 26, 24, 22, 24, 26, 28, 30, 32, 30, 28, 26]}]}]"
+        }
+      ],
+      "title": "ECharts: lines that cross, Fill opacity 60",
+      "type": "grafana-echartscartesian-panel"
+    },
+    {
+      "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+      "description": "Override on a: Fill below to b, Fill opacity 60. The lines cross: the band is only where a is above b. b has Fill opacity 10 to the axis.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 10 } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "a" },
+            "properties": [
+              { "id": "custom.fillBelowTo", "value": "b" },
+              { "id": "custom.fillOpacity", "value": 60 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+          "refId": "A",
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225600000, 1767226500000, 1767227400000, 1767228300000, 1767229200000, 1767230100000, 1767231000000, 1767231900000, 1767232800000, 1767233700000, 1767234600000, 1767235500000, 1767236400000, 1767237300000]}, {\"name\": \"a\", \"type\": \"number\", \"values\": [10, 18, 26, 34, 40, 44, 40, 32, 24, 16, 12, 20, 30, 38]}, {\"name\": \"b\", \"type\": \"number\", \"values\": [30, 30, 28, 26, 24, 22, 24, 26, 28, 30, 32, 30, 28, 26]}]}]"
+        }
+      ],
+      "title": "Core: lines that cross, Fill opacity 60",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+      "description": "Override on max: Fill below to min. Smooth lines, and null values in both series: the band has a gap where one of the two series has no value.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineInterpolation": "smooth" } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "max" },
+            "properties": [{ "id": "custom.fillBelowTo", "value": "min" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 5,
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "seriesType": "line"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+          "refId": "A",
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225600000, 1767226500000, 1767227400000, 1767228300000, 1767229200000, 1767230100000, 1767231000000, 1767231900000, 1767232800000, 1767233700000, 1767234600000, 1767235500000, 1767236400000, 1767237300000]}, {\"name\": \"max\", \"type\": \"number\", \"values\": [40, 46, 52, 48, null, 61, 58, 50, 47, 53, 60, 57, 49, 45]}, {\"name\": \"min\", \"type\": \"number\", \"values\": [20, 23, 27, 25, 28, 31, 29, 26, 24, null, 30, 28, 25, 22]}]}]"
+        }
+      ],
+      "title": "ECharts: smooth lines with null values",
+      "type": "grafana-echartscartesian-panel"
+    },
+    {
+      "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+      "description": "Override on max: Fill below to min. Smooth lines, and null values in both series: the band has a gap where one of the two series has no value.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "max" },
+            "properties": [{ "id": "custom.fillBelowTo", "value": "min" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "id": 6,
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+          "refId": "A",
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225600000, 1767226500000, 1767227400000, 1767228300000, 1767229200000, 1767230100000, 1767231000000, 1767231900000, 1767232800000, 1767233700000, 1767234600000, 1767235500000, 1767236400000, 1767237300000]}, {\"name\": \"max\", \"type\": \"number\", \"values\": [40, 46, 52, 48, null, 61, 58, 50, 47, 53, 60, 57, 49, 45]}, {\"name\": \"min\", \"type\": \"number\", \"values\": [20, 23, 27, 25, 28, 31, 29, 26, 24, null, 30, 28, 25, 22]}]}]"
+        }
+      ],
+      "title": "Core: smooth lines with null values",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+      "description": "Two queries. The times of min (query B) are 30 s after the times of max (query A), so no time is equal. Override on max: Fill below to min. The band follows the two lines.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": {} },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "max" },
+            "properties": [{ "id": "custom.fillBelowTo", "value": "min" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 7,
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "seriesType": "line"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+          "refId": "A",
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225600000, 1767226500000, 1767227400000, 1767228300000, 1767229200000, 1767230100000, 1767231000000, 1767231900000, 1767232800000, 1767233700000, 1767234600000, 1767235500000, 1767236400000, 1767237300000]}, {\"name\": \"max\", \"type\": \"number\", \"values\": [40, 46, 52, 48, 55, 61, 58, 50, 47, 53, 60, 57, 49, 45]}]}]"
+        },
+        {
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+          "refId": "B",
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225630000, 1767226530000, 1767227430000, 1767228330000, 1767229230000, 1767230130000, 1767231030000, 1767231930000, 1767232830000, 1767233730000, 1767234630000, 1767235530000, 1767236430000, 1767237330000]}, {\"name\": \"min\", \"type\": \"number\", \"values\": [20, 23, 27, 25, 28, 31, 29, 26, 24, 27, 30, 28, 25, 22]}]}]"
+        }
+      ],
+      "title": "ECharts: two queries, times 30 s apart",
+      "type": "grafana-echartscartesian-panel"
+    },
+    {
+      "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+      "description": "Two queries. The times of min (query B) are 30 s after the times of max (query A), so no time is equal. Override on max: Fill below to min. The band follows the two lines.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line" } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "max" },
+            "properties": [{ "id": "custom.fillBelowTo", "value": "min" }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "id": 8,
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+          "refId": "A",
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225600000, 1767226500000, 1767227400000, 1767228300000, 1767229200000, 1767230100000, 1767231000000, 1767231900000, 1767232800000, 1767233700000, 1767234600000, 1767235500000, 1767236400000, 1767237300000]}, {\"name\": \"max\", \"type\": \"number\", \"values\": [40, 46, 52, 48, 55, 61, 58, 50, 47, 53, 60, 57, 49, 45]}]}]"
+        },
+        {
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+          "refId": "B",
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225630000, 1767226530000, 1767227430000, 1767228330000, 1767229230000, 1767230130000, 1767231030000, 1767231930000, 1767232830000, 1767233730000, 1767234630000, 1767235530000, 1767236430000, 1767237330000]}, {\"name\": \"min\", \"type\": \"number\", \"values\": [20, 23, 27, 25, 28, 31, 29, 26, 24, 27, 30, 28, 25, 22]}]}]"
+        }
+      ],
+      "title": "Core: two queries, times 30 s apart",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+      "description": "Step after lines that cross. Override on a: Fill below to b, Fill opacity 60. The band steps with the lines.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineInterpolation": "stepAfter" } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "a" },
+            "properties": [
+              { "id": "custom.fillBelowTo", "value": "b" },
+              { "id": "custom.fillOpacity", "value": 60 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "id": 9,
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "seriesType": "line"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+          "refId": "A",
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225600000, 1767226500000, 1767227400000, 1767228300000, 1767229200000, 1767230100000, 1767231000000, 1767231900000, 1767232800000, 1767233700000, 1767234600000, 1767235500000, 1767236400000, 1767237300000]}, {\"name\": \"a\", \"type\": \"number\", \"values\": [10, 18, 26, 34, 40, 44, 40, 32, 24, 16, 12, 20, 30, 38]}, {\"name\": \"b\", \"type\": \"number\", \"values\": [30, 30, 28, 26, 24, 22, 24, 26, 28, 30, 32, 30, 28, 26]}]}]"
+        }
+      ],
+      "title": "ECharts: step after lines that cross",
+      "type": "grafana-echartscartesian-panel"
+    },
+    {
+      "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+      "description": "Step after lines that cross. Override on a: Fill below to b, Fill opacity 60. The band steps with the lines.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "lineInterpolation": "stepAfter" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "a" },
+            "properties": [
+              { "id": "custom.fillBelowTo", "value": "b" },
+              { "id": "custom.fillOpacity", "value": 60 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "id": 10,
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+          "refId": "A",
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225600000, 1767226500000, 1767227400000, 1767228300000, 1767229200000, 1767230100000, 1767231000000, 1767231900000, 1767232800000, 1767233700000, 1767234600000, 1767235500000, 1767236400000, 1767237300000]}, {\"name\": \"a\", \"type\": \"number\", \"values\": [10, 18, 26, 34, 40, 44, 40, 32, 24, 16, 12, 20, 30, 38]}, {\"name\": \"b\", \"type\": \"number\", \"values\": [30, 30, 28, 26, 24, 22, 24, 26, 28, 30, 32, 30, 28, 26]}]}]"
+        }
+      ],
+      "title": "Core: step after lines that cross",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+      "description": "Override on a: Fill below to a series that the data does not have, Fill opacity 40. The series has no fill.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": {} },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "a" },
+            "properties": [
+              { "id": "custom.fillBelowTo", "value": "unknown" },
+              { "id": "custom.fillOpacity", "value": 40 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
+      "id": 11,
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "seriesType": "line"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+          "refId": "A",
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225600000, 1767226500000, 1767227400000, 1767228300000, 1767229200000, 1767230100000, 1767231000000, 1767231900000, 1767232800000, 1767233700000, 1767234600000, 1767235500000, 1767236400000, 1767237300000]}, {\"name\": \"a\", \"type\": \"number\", \"values\": [10, 18, 26, 34, 40, 44, 40, 32, 24, 16, 12, 20, 30, 38]}, {\"name\": \"b\", \"type\": \"number\", \"values\": [30, 30, 28, 26, 24, 22, 24, 26, 28, 30, 32, 30, 28, 26]}]}]"
+        }
+      ],
+      "title": "ECharts: target not in the data",
+      "type": "grafana-echartscartesian-panel"
+    },
+    {
+      "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+      "description": "Override on a: Fill below to a series that the data does not have, Fill opacity 40. The series has no fill.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line" } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "a" },
+            "properties": [
+              { "id": "custom.fillBelowTo", "value": "unknown" },
+              { "id": "custom.fillOpacity", "value": 40 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
+      "id": 12,
+      "options": {
+        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom", "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "trlxrdZVk" },
+          "refId": "A",
+          "scenarioId": "raw_frame",
+          "rawFrameContent": "[{\"fields\": [{\"name\": \"time\", \"type\": \"time\", \"values\": [1767225600000, 1767226500000, 1767227400000, 1767228300000, 1767229200000, 1767230100000, 1767231000000, 1767231900000, 1767232800000, 1767233700000, 1767234600000, 1767235500000, 1767236400000, 1767237300000]}, {\"name\": \"a\", \"type\": \"number\", \"values\": [10, 18, 26, 34, 40, 44, 40, 32, 24, 16, 12, 20, 30, 38]}, {\"name\": \"b\", \"type\": \"number\", \"values\": [30, 30, 28, 26, 24, 22, 24, 26, 28, 30, 32, 30, 28, 26]}]}]"
+        }
+      ],
+      "title": "Core: target not in the data",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 39,
+  "tags": ["echarts", "cartesian", "parity"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "2026-01-01T00:00:00.000Z",
+    "to": "2026-01-01T03:30:00.000Z"
+  },
+  "timepicker": {},
+  "timezone": "utc",
+  "title": "ECharts Cartesian — fill below to",
+  "uid": "b2c3d4e5-0121-4121-8121-cartfill0121",
+  "version": 1,
+  "weekStart": ""
+}
