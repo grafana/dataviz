@@ -28,7 +28,7 @@
   "preload": false,
   "refresh": "",
   "schemaVersion": 42,
-  "tags": ["gdev", "panel-tests", "graph-ng"],
+  "tags": ["panel-tests", "heatmap"],
   "time": {
     "from": "2021-01-01T00:00:00.000Z",
     "to": "2021-01-01T05:00:00.000Z"
