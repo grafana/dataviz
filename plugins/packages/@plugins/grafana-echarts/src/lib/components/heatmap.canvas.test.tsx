@@ -1,5 +1,11 @@
 import { normalizeCanvasEvents } from 'test/canvas';
-import { denseCellsFrame, leRowsFrame, renderHeatmap, sparseCellsFrame } from 'test/heatmapCanvas';
+import {
+  denseCellsFrame,
+  leRowsFrame,
+  renderHeatmap,
+  sparseCellsFrame,
+  wideSparseCellsFrame,
+} from 'test/heatmapCanvas';
 import { height, width } from 'test/panel';
 import { type PanelOptions } from 'types';
 
@@ -74,6 +80,39 @@ describe('heatmap core parity canvas', () => {
       color: { mode: 'opacity', fill: 'blue', scale: 'exponential', exponent: 0.5, min: 0, max: 12 },
     });
     expect(cells).toMatchCanvasSnapshot(context, { width, height });
+  });
+
+  // The axis layer: the Y labels, ticks and split lines. The cell baselines above do not cover it.
+  describe('log Y axis ticks', () => {
+    const renderAxis = async (frames: Parameters<typeof renderHeatmap>[0], options: Partial<PanelOptions>) => {
+      const { seriesEvents, defaultEvents, axisEvents } = await renderHeatmap(frames, options);
+      return { axis: normalizeCanvasEvents(axisEvents), context: [...defaultEvents, ...seriesEvents] };
+    };
+
+    it('sparse cells, log2 by default, 17 magnitudes', async () => {
+      const { axis, context } = await renderAxis([wideSparseCellsFrame()], { yAxis: { unit: 's' } });
+      expect(axis).toMatchCanvasSnapshot(context, { width, height });
+    });
+
+    it('sparse cells, log10 Y bucket scale', async () => {
+      const { axis, context } = await renderAxis([wideSparseCellsFrame()], {
+        yAxis: { unit: 's' },
+        rowsFrame: { yBucketScale: { type: 'log', log: 10 } },
+      });
+      expect(axis).toMatchCanvasSnapshot(context, { width, height });
+    });
+
+    it('dense cells, log2', async () => {
+      const { axis, context } = await renderAxis([denseCellsFrame(2)], {});
+      expect(axis).toMatchCanvasSnapshot(context, { width, height });
+    });
+
+    it('le rows, log2 Y bucket scale', async () => {
+      const { axis, context } = await renderAxis([leRowsFrame], {
+        rowsFrame: { yBucketScale: { type: 'log', log: 2 } },
+      });
+      expect(axis).toMatchCanvasSnapshot(context, { width, height });
+    });
   });
 
   it('long unit labels on the Y axis', async () => {

@@ -8,6 +8,7 @@ import {
   manyLeRowsFrame,
   renderHeatmap,
   sparseCellsFrame,
+  wideSparseCellsFrame,
 } from 'test/heatmapCanvas';
 
 // Heatmap core-parity claims, stated as counts and as differences between two
@@ -127,6 +128,41 @@ describe('heatmap colors', () => {
     const wide = new Set(await fills({ min: 0, max: 1000 }));
     const data = new Set(await fills());
     expect(wide.size).toBeLessThan(data.size);
+  });
+});
+
+describe('heatmap log Y axis ticks', () => {
+  // The largest difference between two label gaps, in pixels. Equal steps on a log axis give 0 or 1.
+  const gapSpread = (drawn: ReturnType<typeof axisLabelYs>) => {
+    const gaps = drawn.slice(1).map((label, i) => label.y - drawn[i].y);
+    return Math.max(...gaps) - Math.min(...gaps);
+  };
+
+  it('draws the labels of a sparse frame at an equal distance on the default log 2 scale', async () => {
+    const { axisEvents } = await renderHeatmap([wideSparseCellsFrame()]);
+    const drawn = axisLabelYs(axisEvents);
+    // 17 magnitudes in a 300 px panel: a label for each third power of 2, from 2^0 down to 2^-15.
+    expect(drawn).toHaveLength(6);
+    expect(drawn[0].text).toBe('1');
+    expect(gapSpread(drawn)).toBeLessThanOrEqual(1);
+  });
+
+  it('draws the labels of a sparse frame at an equal distance on a log 10 scale', async () => {
+    const { axisEvents } = await renderHeatmap([wideSparseCellsFrame()], {
+      rowsFrame: { yBucketScale: { type: 'log', log: 10 } },
+    });
+    const drawn = axisLabelYs(axisEvents);
+    // 2^-15 to 4 goes out to 10^-5 and 10: a label for each of the 7 powers of 10.
+    expect(drawn.map((label) => label.text)).toEqual([
+      '10',
+      '1',
+      '0.100',
+      '0.0100',
+      '0.00100',
+      '0.000100',
+      '0.0000100',
+    ]);
+    expect(gapSpread(drawn)).toBeLessThanOrEqual(1);
   });
 });
 

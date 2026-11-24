@@ -103,6 +103,18 @@ export const sparseCellsFrame = (zeroBucket = false) => {
   if (zeroBucket) {
     bounds.unshift([-1, -0.5], [-0.5, 0.5]);
   }
+  return sparseFrame(bounds);
+};
+
+/**
+ * Sparse heatmap-cells with a wide range, as for request durations: 17 buckets
+ * that double from 2^-15 (30.5 µs) to 4. The Y axis has more whole magnitudes
+ * than the labels that fit, so the tick step is larger than 1.
+ */
+export const wideSparseCellsFrame = () =>
+  sparseFrame(Array.from({ length: 17 }, (_, i) => [2 ** (i - 15), 2 ** (i - 14)]));
+
+const sparseFrame = (bounds: number[][]) => {
   return toDataFrame({
     meta: { type: DataFrameType.HeatmapCells },
     fields: [
