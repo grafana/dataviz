@@ -11,7 +11,15 @@ import path from 'node:path';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { getInstanceByDom } from 'lib/echarts/echarts';
 import { getChart } from 'test/canvas';
-import { allFixtureSets, FIXTURES_DIR, fixtureSets, fixtureSpec, fixtureState } from 'test/rendererFixtures';
+import {
+  allFixtureSets,
+  FIXTURES_DIR,
+  fixturePickedSpec,
+  fixtureSets,
+  fixtureSpec,
+  fixtureState,
+} from 'test/rendererFixtures';
+import { drawnTexts } from 'test/statCanvas';
 import { clickAt, dispatch, markPoint, tooltipText } from 'test/tooltipPointer';
 import { render } from './index';
 
@@ -68,6 +76,34 @@ describe('the fixture sets of the contract', () => {
     const [series] = option.series as Array<{ data: Array<{ name: string }> }>;
     expect(axes.map((axis) => axis.name)).toEqual(['cpu', 'memory', 'load']);
     expect(series.data.map((line) => line.name)).toEqual(['h0', 'h1', 'h2']);
+  });
+});
+
+// The Source owns the pick rule `single-value` (`fixtures.14`). These tests make sure that the Renderer draws the
+// panel that the rule gives: one stat cell for each number field, over all frames.
+describe('the panel that the pick rule single-value gives', () => {
+  /** The texts that the chart in `el` draws. */
+  const canvasTexts = (el: HTMLElement) =>
+    [...el.querySelectorAll('canvas')].flatMap((canvas) => drawnTexts(canvas.getContext('2d')!.__getEvents()));
+
+  it.each([
+    ['pick-single-stat', ['42']],
+    ['pick-single-value-instant', ['42']],
+    ['pick-single-value-many', ['52', '78', '94']],
+    ['pick-single-value-frames', ['10', '17', '24']],
+  ])('%s draws the value of each number field in a stat cell', async (set, values) => {
+    const spec = fixturePickedSpec(set);
+    expect((spec.panel as { type?: string }).type).toBe('grafana-echartsstat-panel');
+    const { el, states } = await draw(spec);
+    expect(states.at(-1)).toEqual({ state: 'ready', notices: [] });
+    expect(canvasTexts(el)).toEqual(expect.arrayContaining(values));
+  });
+
+  it('pick-single-value-over-limit draws one bar series for each of its eleven number fields', async () => {
+    const { el, states } = await draw(fixturePickedSpec('pick-single-value-over-limit'));
+    expect(states.at(-1)).toEqual({ state: 'ready', notices: [] });
+    const series = getChart(el).chart!.getOption().series as Array<{ type: string }>;
+    expect(series.map(({ type }) => type)).toEqual(Array.from({ length: 11 }, () => 'bar'));
   });
 });
 
@@ -163,9 +199,10 @@ describe('Ask in chat', () => {
     throw new Error('No point has the Ask in chat link');
   }
 
-  // The gauge panel has no tooltip, so it has no Ask in chat.
+  // The gauge panel and the stat panel have no tooltip, so they have no Ask in chat.
+  const NO_TOOLTIP_PANELS = ['grafana-echartsgauge-panel', 'grafana-echartsstat-panel'];
   const hasTooltip = (set: string) =>
-    (fixtureSpec(set).panel as { type?: string }).type !== 'grafana-echartsgauge-panel';
+    !NO_TOOLTIP_PANELS.includes(String((fixtureSpec(set).panel as { type?: string }).type));
   const chartSets = sets.filter((set) => fixtureState(set).state === 'ready' && hasTooltip(set));
 
   // The contract has a `message.json` only for a time series. This test makes sure that the message of each other

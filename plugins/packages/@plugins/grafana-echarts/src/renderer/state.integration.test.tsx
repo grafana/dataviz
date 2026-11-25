@@ -3,6 +3,7 @@ import { type RenderState } from '@grafana/viz-contract/renderer-api';
 import { act, screen, waitFor } from '@testing-library/react';
 import { getInstanceByDom } from 'lib/echarts/echarts';
 import { fixtureSpec, fixtureState } from 'test/rendererFixtures';
+import { drawnTexts } from 'test/statCanvas';
 import { render, specVersions } from './index';
 
 /** An element with a size: jsdom has no layout, so `clientWidth` and `clientHeight` are 0. */
@@ -146,27 +147,36 @@ describe('the state of a draw', () => {
   });
 });
 
-describe('the state of a gauge draw', () => {
-  /** `smoke-gauge` with the fields of `fields`, one row each. */
-  const gaugeSpec = (fields: Array<{ name: string; type: FieldType; value: unknown }>) => {
-    const spec = fixtureSpec('smoke-gauge');
-    (spec.data as { results: unknown }).results = {
-      A: {
-        status: 200,
-        frames: [
-          {
-            schema: { fields: fields.map(({ name, type }) => ({ name, type })) },
-            data: { values: fields.map(({ value }) => [value]) },
-          },
-        ],
-      },
-    };
-    return spec;
+/** The spec of the smoke set `set` with one frame: the fields of `fields`, each with the rows of its `values`. */
+const framesSpec = (set: string, fields: Array<{ name: string; type: FieldType; values: unknown[] }>) => {
+  const spec = fixtureSpec(set);
+  (spec.data as { results: unknown }).results = {
+    A: {
+      status: 200,
+      frames: [
+        {
+          schema: { fields: fields.map(({ name, type }) => ({ name, type })) },
+          data: { values: fields.map(({ values }) => values) },
+        },
+      ],
+    },
   };
+  return spec;
+};
 
+/** 53 number fields with one row each: 3 more than `maxSeries`. */
+const manyNumberFields = Array.from({ length: 53 }, (_, i) => ({ name: `s${i}`, type: FieldType.number, values: [i] }));
+
+/** The `series-truncated` state of `manyNumberFields`. */
+const truncatedState: RenderState = {
+  state: 'ready',
+  notices: [{ code: 'series-truncated', message: '3 series are not shown. The first 50 series are drawn.' }],
+};
+
+describe('the state of a gauge draw', () => {
   // contract-rule: state.5
   it('gives panel-error with the fix steps when the frames have rows and no number field', async () => {
-    const { states } = await draw(gaugeSpec([{ name: 'host', type: FieldType.string, value: 'a' }]));
+    const { states } = await draw(framesSpec('smoke-gauge', [{ name: 'host', type: FieldType.string, values: ['a'] }]));
     const message = 'Cannot visualize data. Add a number field. Each number field is one gauge.';
     expect(states.at(-1)).toEqual({ state: 'error', error: { code: 'panel-error', message }, notices: [] });
     expect(screen.getByRole('alert')).toBeInTheDocument();
@@ -201,39 +211,88 @@ describe('the state of a gauge draw', () => {
 
   // contract-rule: state.19
   it('gives series-truncated for more number fields than maxSeries', async () => {
-    const fields = Array.from({ length: 53 }, (_, i) => ({ name: `s${i}`, type: FieldType.number, value: i }));
-    const { states } = await draw(gaugeSpec(fields));
-    expect(states.at(-1)).toEqual({
-      state: 'ready',
-      notices: [{ code: 'series-truncated', message: '3 series are not shown. The first 50 series are drawn.' }],
-    });
+    const { states } = await draw(framesSpec('smoke-gauge', manyNumberFields));
+    expect(states.at(-1)).toEqual(truncatedState);
   });
 
   // The cut counts number fields, not gauges. With all values, each row is one gauge, and `limit` sets their number.
   it('does not cut the rows of one number field: 60 gauges with all values and a limit of 60', async () => {
-    const spec = fixtureSpec('smoke-gauge');
+    const spec = framesSpec('smoke-gauge', [
+      { name: 'load', type: FieldType.number, values: Array.from({ length: 60 }, (_, i) => i) },
+    ]);
     (spec.panel as Record<string, unknown>).options = { reduceOptions: { values: true, calcs: [], limit: 60 } };
-    (spec.data as { results: unknown }).results = {
-      A: {
-        status: 200,
-        frames: [
-          {
-            schema: { fields: [{ name: 'load', type: FieldType.number }] },
-            data: { values: [Array.from({ length: 60 }, (_, i) => i)] },
-          },
-        ],
-      },
-    };
     const { el, states } = await draw(spec);
     expect(states.at(-1)).toEqual({ state: 'ready', notices: [] });
     // Each gauge is two series: the threshold band and the value bar.
     expect(gaugeGeometry(el)).toHaveLength(120);
   });
+});
 
-  it('gives unsupported-panel-type for the stat panel, which this package does not have', async () => {
-    const spec = fixtureSpec('smoke-gauge');
-    (spec.panel as Record<string, unknown>).type = 'grafana-echartsstat-panel';
-    const { el } = await draw(spec);
-    expect(el.getAttribute('data-viz-error')).toBe('unsupported-panel-type');
+describe('the state of a stat draw', () => {
+  /** The texts that the chart in `el` draws. */
+  const statTexts = (el: HTMLElement) =>
+    [...el.querySelectorAll('canvas')].flatMap((canvas) => drawnTexts(canvas.getContext('2d')!.__getEvents()));
+
+  // `ready` alone shows only that the draw did not throw (`state.5`). The texts show that the cells draw.
+  it('draws the last value and the name of each number field', async () => {
+    const { el, states } = await draw(fixtureSpec('smoke-stat'));
+    expect(states.at(-1)).toEqual({ state: 'ready', notices: [] });
+    expect(statTexts(el)).toEqual(expect.arrayContaining(['requests', '1242', 'errors', '7']));
+  });
+
+  // contract-rule: state.5
+  it('gives panel-error with the fix steps when the frames have rows and no number field', async () => {
+    const { states } = await draw(framesSpec('smoke-stat', [{ name: 'host', type: FieldType.string, values: ['a'] }]));
+    const message =
+      'Cannot visualize data. Add a number field. To show text fields, set Value options > Fields to All Fields.';
+    expect(states.at(-1)).toEqual({ state: 'error', error: { code: 'panel-error', message }, notices: [] });
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+
+  it('draws the value of each number field when an option has a value of the wrong type', async () => {
+    const spec = fixtureSpec('smoke-stat');
+    (spec.panel as Record<string, unknown>).options = {
+      orientation: 7,
+      textMode: 'big',
+      colorMode: 7,
+      graphMode: 'yes',
+      justifyMode: 7,
+      wideLayout: 'yes',
+      showPercentChange: 'yes',
+      text: 'large',
+      reduceOptions: 'last',
+    };
+    const { el, states } = await draw(spec);
+    expect(states.at(-1)).toEqual({ state: 'ready', notices: [] });
+    expect(statTexts(el)).toEqual(expect.arrayContaining(['1242', '7']));
+  });
+
+  // contract-rule: state.19
+  it('gives series-truncated for more number fields than maxSeries', async () => {
+    const { states } = await draw(framesSpec('smoke-stat', manyNumberFields));
+    expect(states.at(-1)).toEqual(truncatedState);
+  });
+
+  // The cut counts number fields, not cells. With all values, each row is one cell, and `limit` sets their number.
+  it('does not cut the rows of one number field: 60 cells with all values and a limit of 60', async () => {
+    const values = Array.from({ length: 60 }, (_, i) => 100 + i);
+    const spec = framesSpec('smoke-stat', [{ name: 'load', type: FieldType.number, values }]);
+    (spec.panel as Record<string, unknown>).options = { reduceOptions: { values: true, calcs: [], limit: 60 } };
+    const { el, states } = await draw(spec);
+    expect(states.at(-1)).toEqual({ state: 'ready', notices: [] });
+    expect(statTexts(el)).toEqual(expect.arrayContaining(values.map(String)));
+  });
+
+  // A text field is not a series. With all fields (`reduceOptions.fields`), each text field is one cell also.
+  it('does not cut the text fields: 60 cells with all fields', async () => {
+    const hosts = Array.from({ length: 60 }, (_, i) => `host-${i}`);
+    const spec = framesSpec(
+      'smoke-stat',
+      hosts.map((host, i) => ({ name: `s${i}`, type: FieldType.string, values: [host] }))
+    );
+    (spec.panel as Record<string, unknown>).options = { reduceOptions: { calcs: ['lastNotNull'], fields: '/.*/' } };
+    const { el, states } = await draw(spec);
+    expect(states.at(-1)).toEqual({ state: 'ready', notices: [] });
+    expect(statTexts(el)).toEqual(expect.arrayContaining(hosts));
   });
 });
