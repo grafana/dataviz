@@ -6,6 +6,35 @@ const SPACING = 16;
 const layout = (width: number, height: number, count: number) =>
   layoutRepeaterCells({ width, height, count, spacing: SPACING });
 
+// Gives one [width, height, count] case for each count of each panel.
+const matrix = (panels: Array<[number, number, number[]]>) =>
+  panels.flatMap(([width, height, counts]) => counts.map((count): [number, number, number] => [width, height, count]));
+
+// Checks the count first: the bounds loop checks nothing when there is no cell.
+const expectCellsInPanel = (
+  cells: ReturnType<typeof layoutRepeaterCells>,
+  { width, height, count }: { width: number; height: number; count: number }
+) => {
+  expect(cells).toHaveLength(count);
+  for (const cell of cells) {
+    expect(cell.x + cell.width).toBeLessThanOrEqual(width + 1e-9);
+    expect(cell.y + cell.height).toBeLessThanOrEqual(height + 1e-9);
+    expect(cell.width).toBeGreaterThan(0);
+    expect(cell.height).toBeGreaterThan(0);
+  }
+  // No two cells overlap.
+  cells.forEach((a, i) => {
+    for (const b of cells.slice(i + 1)) {
+      const apart =
+        a.x + a.width <= b.x + 1e-9 ||
+        b.x + b.width <= a.x + 1e-9 ||
+        a.y + a.height <= b.y + 1e-9 ||
+        b.y + b.height <= a.y + 1e-9;
+      expect(apart).toBe(true);
+    }
+  });
+};
+
 describe('layoutRepeaterCells with an orientation', () => {
   const oriented = (orientation: VizOrientation, count = 3) =>
     layoutRepeaterCells({ width: 400, height: 300, count, spacing: SPACING, orientation });
@@ -52,25 +81,34 @@ describe('layoutRepeaterCells with an orientation', () => {
     expect(oriented(VizOrientation.Vertical, 27)).toEqual([]);
   });
 
-  it.each([VizOrientation.Horizontal, VizOrientation.Vertical])(
-    '%s: keeps every cell inside the panel, with a size above zero',
-    (orientation) => {
-      for (const [width, height] of [
-        [640, 360],
-        [100, 100],
-        [17, 23],
-      ]) {
-        for (const count of [1, 2, 5, 7, 12, 50]) {
-          for (const cell of layoutRepeaterCells({ width, height, count, spacing: SPACING, orientation })) {
-            expect(cell.x + cell.width).toBeLessThanOrEqual(width + 1e-9);
-            expect(cell.y + cell.height).toBeLessThanOrEqual(height + 1e-9);
-            expect(cell.width).toBeGreaterThan(0);
-            expect(cell.height).toBeGreaterThan(0);
-          }
-        }
+  // The same panels and counts fit in both orientations.
+  const orientedFits = matrix([
+    [640, 360, [1, 2, 5, 7, 12]],
+    [100, 100, [1, 2, 5, 7]],
+    [17, 23, [1, 2]],
+  ]);
+  const orientedNoSpace = matrix([
+    [640, 360, [50]],
+    [100, 100, [12, 50]],
+    [17, 23, [5, 7, 12, 50]],
+  ]);
+
+  describe.each([VizOrientation.Horizontal, VizOrientation.Vertical])('%s', (orientation) => {
+    it.each(orientedFits)(
+      '%i x %i, %i values: gives one cell for each value, inside the panel, with a size above zero',
+      (width, height, count) => {
+        expectCellsInPanel(layoutRepeaterCells({ width, height, count, spacing: SPACING, orientation }), {
+          width,
+          height,
+          count,
+        });
       }
-    }
-  );
+    );
+
+    it.each(orientedNoSpace)('%i x %i, %i values: gives no cell when there is no space', (width, height, count) => {
+      expect(layoutRepeaterCells({ width, height, count, spacing: SPACING, orientation })).toEqual([]);
+    });
+  });
 });
 
 describe('layoutRepeaterCells', () => {
@@ -105,25 +143,29 @@ describe('layoutRepeaterCells', () => {
     expect(cells.every((cell) => cell.width === 200)).toBe(true);
   });
 
-  it('keeps every cell inside the panel, with a size above zero', () => {
-    // The small panels have no space for all counts. For those, the result is empty.
-    const panels = [
-      [640, 360],
-      [100, 100],
-      [300, 40],
-      [40, 300],
-      [17, 23],
-    ];
-    for (const [width, height] of panels) {
-      for (const count of [1, 2, 5, 7, 12, 50, 200]) {
-        for (const cell of layout(width, height, count)) {
-          expect(cell.x + cell.width).toBeLessThanOrEqual(width + 1e-9);
-          expect(cell.y + cell.height).toBeLessThanOrEqual(height + 1e-9);
-          expect(cell.width).toBeGreaterThan(0);
-          expect(cell.height).toBeGreaterThan(0);
-        }
-      }
+  const fits = matrix([
+    [640, 360, [1, 2, 5, 7, 12, 50, 200]],
+    [100, 100, [1, 2, 5, 7, 12]],
+    [300, 40, [1, 2, 5, 7, 12, 50]],
+    [40, 300, [1, 2, 5, 7, 12, 50]],
+    [17, 23, [1, 2]],
+  ]);
+  const noSpace = matrix([
+    [100, 100, [50, 200]],
+    [300, 40, [200]],
+    [40, 300, [200]],
+    [17, 23, [5, 7, 12, 50, 200]],
+  ]);
+
+  it.each(fits)(
+    '%i x %i, %i values: gives one cell for each value, inside the panel, with a size above zero',
+    (width, height, count) => {
+      expectCellsInPanel(layout(width, height, count), { width, height, count });
     }
+  );
+
+  it.each(noSpace)('%i x %i, %i values: gives no cell when there is no space', (width, height, count) => {
+    expect(layout(width, height, count)).toEqual([]);
   });
 
   it('gives no cell when the spacing is larger than the share of one cell', () => {
