@@ -8,8 +8,8 @@ function controls(page: Page) {
   const app = page.frameLocator('#app');
   return {
     picker: app.getByTestId('data-testid TimePicker Open Button'),
-    zoomOut: app.getByRole('button', { name: 'Zoom out time range' }),
-    reset: app.getByRole('button', { name: 'Reset time range' }),
+    zoomOut: app.locator('[data-viz-control="picker-zoom-out"]'),
+    reset: app.locator('[data-viz-control^="reset-"]'),
     refresh: app.getByRole('button', { name: 'Refresh' }),
     status: app.getByRole('status'),
   };
@@ -69,11 +69,11 @@ async function nextRequest(page: Page, count: number) {
 }
 
 test('time range actions ask the App once, and a busy chart ignores more actions', async ({ page }) => {
-  // contract-rule: delivery.12
-  // contract-rule: renderer.44
+  // contract-rule: delivery.30
+  // contract-rule: renderer.75
   // contract-rule: renderer.46
-  // contract-rule: renderer.47
-  // contract-rule: renderer.48
+  // contract-rule: renderer.78
+  // contract-rule: renderer.77
   const spec = fixtureSpec('prometheus-line');
   const { requests } = await draw(page, spec);
   const ui = controls(page);
@@ -177,3 +177,25 @@ test('time range gestures stay local without onRefresh', async ({ page }) => {
   );
   expect(requests).toEqual([]);
 });
+
+for (const onRefresh of [true, false]) {
+  test(`optional control declarations match the rendered controls with onRefresh=${onRefresh}`, async ({ page }) => {
+    // contract-rule: renderer.71
+    // contract-rule: renderer.72
+    // contract-rule: delivery.29
+    await draw(page, fixtureSpec('prometheus-line'), { onRefresh });
+    const module = (await readMessages(page)).find((message) => message.type === 'module');
+    expect(module?.optionalControls).toEqual(['reset-with-refresh', 'reset-without-refresh', 'picker-zoom-out']);
+    await (await gestures(page)).zoomIn();
+    if (onRefresh) {
+      const request = await nextRequest(page, 1);
+      await answer(page, { type: 'setRefreshed', id: request.id, ok: true });
+      await expect(controls(page).refresh).toBeEnabled();
+    }
+    const names = await page
+      .frameLocator('#app')
+      .locator('[data-viz-control]')
+      .evaluateAll((elements) => elements.map((element) => element.getAttribute('data-viz-control')).sort());
+    expect(names).toEqual(onRefresh ? ['picker-zoom-out', 'reset-with-refresh'] : ['reset-without-refresh']);
+  });
+}

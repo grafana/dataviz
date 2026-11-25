@@ -2,7 +2,7 @@ import { type TimeRange } from '@grafana/data';
 import { type TimeZone } from '@grafana/schema';
 import { TimeRangePicker } from '@grafana/ui';
 import { zoomOutTimeRange } from 'lib/grafana/time/zoomOut';
-import React from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { type RefreshCause } from './refresh';
 import {
   shiftTimeRange,
@@ -28,16 +28,26 @@ interface Props {
  * https://github.com/grafana/grafana/blob/main/packages/grafana-ui/src/components/DateTimePickers/TimeRangePicker.tsx
  */
 export const TimePicker = ({ value, timeZone, onRequest, onPick }: Props) => {
+  const container = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    // The pinned UI picker has no prop for attributes on its Zoom out button.
+    const button = container.current?.querySelector(
+      '[data-testid="data-testid explore-toolbar-timepicker-zoom-out-button"]'
+    );
+    button?.setAttribute('data-viz-control', 'picker-zoom-out');
+  }, []);
   const range = toAbsoluteTimeRange(value);
   return (
-    <TimeRangePicker
-      value={value}
-      timeZone={timeZone}
-      onChange={(picked) => onPick(toRefreshRequest(picked))}
-      onMoveBackward={() => onRequest(toTimeRangeRequest(shiftTimeRange(range, -1)))}
-      onMoveForward={() => onRequest(toTimeRangeRequest(shiftTimeRange(range, 1)))}
-      onZoom={() => onRequest(toTimeRangeRequest(zoomOutTimeRange(range)))}
-      onChangeTimeZone={noop}
-    />
+    <div ref={container} style={{ display: 'contents' }}>
+      <TimeRangePicker
+        value={value}
+        timeZone={timeZone}
+        onChange={(picked) => onPick(toRefreshRequest(picked))}
+        onMoveBackward={() => onRequest(toTimeRangeRequest(shiftTimeRange(range, -1)))}
+        onMoveForward={() => onRequest(toTimeRangeRequest(shiftTimeRange(range, 1)))}
+        onZoom={() => onRequest(toTimeRangeRequest(zoomOutTimeRange(range)))}
+        onChangeTimeZone={noop}
+      />
+    </div>
   );
 };

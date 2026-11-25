@@ -13,7 +13,7 @@ export const ChartResetTimeRangeButton = ({ onClick }: Props) => {
   const styles = useStyles2(getStyles);
   return (
     <div className={styles.corner}>
-      <ResetTimeRangeButton onClick={onClick} />
+      <ResetTimeRangeButton control="reset-without-refresh" onClick={onClick} />
     </div>
   );
 };
