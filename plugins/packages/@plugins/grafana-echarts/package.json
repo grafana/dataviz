@@ -103,14 +103,21 @@
   },
   "dependencies": {
     "@emotion/css": "11.10.6",
+    "@floating-ui/react": "0.27.19",
     "@grafana/data": "13.3.0",
     "@grafana/i18n": "13.3.0",
     "@grafana/runtime": "13.3.0",
     "@grafana/schema": "13.3.0",
     "@grafana/ui": "13.3.0",
+    "@react-aria/dialog": "3.6.1",
+    "@react-aria/focus": "3.21.2",
+    "@react-aria/overlays": "3.32.1",
     "echarts": "6.1.0",
     "react": "19.2.7",
+    "react-calendar": "6.0.1",
     "react-dom": "19.2.7",
+    "react-hook-form": "7.85.0",
+    "react-use": "17.6.1",
     "rxjs": "7.8.2",
     "topojson-client": "3.1.0"
   }

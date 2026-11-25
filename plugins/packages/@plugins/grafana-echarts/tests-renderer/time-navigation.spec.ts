@@ -8,8 +8,8 @@ function controls(page: Page) {
   const app = page.frameLocator('#app');
   return {
     picker: app.getByTestId('data-testid TimePicker Open Button'),
-    zoomOut: app.locator('[data-viz-control="picker-zoom-out"]'),
-    reset: app.locator('[data-viz-control^="reset-"]'),
+    zoomOut: app.getByRole('button', { name: 'Zoom out time range' }),
+    reset: app.getByRole('button', { name: 'Reset time range' }),
     refresh: app.getByRole('button', { name: 'Refresh' }),
     status: app.getByRole('status'),
   };
@@ -69,22 +69,22 @@ async function nextRequest(page: Page, count: number) {
 }
 
 test('time range actions ask the App once, and a busy chart ignores more actions', async ({ page }) => {
-  // contract-rule: delivery.30
-  // contract-rule: renderer.75
   // contract-rule: renderer.46
   // contract-rule: renderer.78
-  // contract-rule: renderer.77
+  // contract-rule: renderer.74
+  // contract-rule: renderer.75
+  // contract-rule: delivery.30
   const spec = fixtureSpec('prometheus-line');
   const { requests } = await draw(page, spec);
   const ui = controls(page);
   const chart = await gestures(page);
-  await expect(ui.reset).toBeDisabled();
+  await expect(ui.reset).toHaveCount(0);
 
   await chart.zoomOut();
   const wide = await nextRequest(page, 1);
   expect([wide.from, wide.to]).toEqual(['1790352127294', '1790353927294']);
-  await expect(ui.zoomOut).toBeDisabled();
-  await expect(ui.reset).toBeDisabled();
+  await expect(ui.zoomOut).toHaveCount(0);
+  await expect(ui.reset).toHaveCount(0);
   await chart.zoomIn();
   await chart.zoomOut();
   await chart.startPan();
@@ -98,7 +98,7 @@ test('time range actions ask the App once, and a busy chart ignores more actions
   await settle(page);
   expect(await refreshes(page)).toHaveLength(1);
 
-  await ui.zoomOut.click();
+  await chart.zoomOut();
   const pickerZoom = await nextRequest(page, 2);
   expect([pickerZoom.from, pickerZoom.to]).toEqual([wide.from, wide.to]);
   await answer(page, { type: 'setRefreshed', id: pickerZoom.id, ok: true });
@@ -123,52 +123,19 @@ test('time range actions ask the App once, and a busy chart ignores more actions
   expect(Number(pan.to) - Number(pan.from)).toBe(fixtureTo - fixtureFrom);
   await answer(page, { type: 'setRefreshed', id: pan.id, ok: true });
 
-  await ui.reset.click();
-  const reset = await nextRequest(page, 5);
-  expect([reset.from, reset.to]).toEqual(['now-15m', 'now']);
-  await answer(page, { type: 'setRefreshed', id: reset.id, ok: false });
-  await expect(ui.status).toHaveText('Refresh failed.');
-
-  await ui.reset.click();
-  const retry = await nextRequest(page, 6);
-  expect([retry.from, retry.to]).toEqual([reset.from, reset.to]);
-  await answer(page, { type: 'update', spec });
-  await expect(ui.refresh).toBeEnabled();
-  await expect(ui.reset).toBeDisabled();
   expect(requests).toEqual([]);
 });
 
-test('Reset uses the last time picker selection after a zoom', async ({ page }) => {
-  const spec = fixtureSpec('prometheus-line');
-  await draw(page, spec);
-  const app = page.frameLocator('#app');
-  const ui = controls(page);
-  await ui.picker.click();
-  await app.getByText('Last 6 hours', { exact: true }).click();
-  const pick = await nextRequest(page, 1);
-  expect([pick.from, pick.to]).toEqual(['now-6h', 'now']);
-  await answer(page, { type: 'update', spec });
-  await expect(ui.reset).toBeDisabled();
-
-  await (await gestures(page)).zoomIn();
-  const zoom = await nextRequest(page, 2);
-  await answer(page, { type: 'setRefreshed', id: zoom.id, ok: true });
-
-  await ui.reset.click();
-  const reset = await nextRequest(page, 3);
-  expect([reset.from, reset.to]).toEqual([pick.from, pick.to]);
-});
-
 test('time range gestures stay local without onRefresh', async ({ page }) => {
+  // contract-rule: renderer.73
   const { requests } = await draw(page, fixtureSpec('prometheus-line'), { onRefresh: false });
   const ui = controls(page);
   const chart = await gestures(page);
   await chart.zoomIn();
-  await expect(ui.reset).toBeVisible();
+  await expect(ui.reset).toHaveCount(0);
   await chart.startPan();
   await chart.endPan();
   await chart.zoomOut();
-  await ui.reset.click();
   await expect(ui.reset).toHaveCount(0);
   await settle(page);
   const messages = await readMessages(page);
@@ -179,23 +146,22 @@ test('time range gestures stay local without onRefresh', async ({ page }) => {
 });
 
 for (const onRefresh of [true, false]) {
-  test(`optional control declarations match the rendered controls with onRefresh=${onRefresh}`, async ({ page }) => {
+  test(`optional controls match the module export with onRefresh=${onRefresh}`, async ({ page }) => {
     // contract-rule: renderer.71
     // contract-rule: renderer.72
     // contract-rule: delivery.29
     await draw(page, fixtureSpec('prometheus-line'), { onRefresh });
     const module = (await readMessages(page)).find((message) => message.type === 'module');
-    expect(module?.optionalControls).toEqual(['reset-with-refresh', 'reset-without-refresh', 'picker-zoom-out']);
-    await (await gestures(page)).zoomIn();
+    expect(module?.optionalControls).toEqual([]);
+    const chart = await gestures(page);
+    await chart.zoomIn();
     if (onRefresh) {
       const request = await nextRequest(page, 1);
       await answer(page, { type: 'setRefreshed', id: request.id, ok: true });
       await expect(controls(page).refresh).toBeEnabled();
     }
-    const names = await page
-      .frameLocator('#app')
-      .locator('[data-viz-control]')
-      .evaluateAll((elements) => elements.map((element) => element.getAttribute('data-viz-control')).sort());
-    expect(names).toEqual(onRefresh ? ['picker-zoom-out', 'reset-with-refresh'] : ['reset-without-refresh']);
+    await expect(page.frameLocator('#app').locator('[data-viz-control]')).toHaveCount(0);
+    await expect(controls(page).reset).toHaveCount(0);
+    await expect(controls(page).zoomOut).toHaveCount(0);
   });
 }

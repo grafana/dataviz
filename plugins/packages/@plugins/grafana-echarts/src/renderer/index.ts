@@ -13,12 +13,8 @@ export const version: string = __RENDERER_VERSION__;
 /** The viz spec versions that the Renderer supports (`delivery.2`, `delivery.3`). */
 export const specVersions: readonly number[] = SUPPORTED_SPEC_VERSIONS;
 
-/** The renderer offers all three optional time controls (`renderer.71`). */
-export const optionalControls: readonly OptionalControl[] = [
-  'reset-with-refresh',
-  'reset-without-refresh',
-  'picker-zoom-out',
-];
+/** The renderer omits all optional time controls (`renderer.71`). */
+export const optionalControls: readonly OptionalControl[] = [];
 
 /**
  * Draws `spec` into `el` and returns at once (`renderer.2`). A spec that is not correct gives the error state, and
