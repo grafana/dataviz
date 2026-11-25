@@ -9,11 +9,21 @@ for (const theme of ['dark', 'light']) {
       const app = page.frameLocator('#app');
       const trigger = app.getByTestId('data-testid TimePicker Open Button');
       await expect(trigger).toBeVisible();
+      await expect(trigger).toHaveCSS('border-radius', '8px');
+      await expect(trigger).toHaveCSS('font-weight', '500');
+      await trigger.evaluate(() => document.fonts.load('500 14px Inter'));
+      await expect.poll(() => trigger.evaluate(() => document.fonts.check('500 14px Inter'))).toBe(true);
       await expect(app.getByRole('button', { name: 'Move time range backwards' })).toHaveCount(0);
       await expect(app.getByRole('button', { name: 'Move time range forwards' })).toHaveCount(0);
       await expect(app.getByRole('button', { name: 'Zoom out time range' })).toHaveCount(0);
       await trigger.click();
       await expect(app.getByRole('dialog', { name: 'Time range picker' })).toBeVisible();
+      const base = await trigger.evaluate((el) => {
+        const style = getComputedStyle(el);
+        return { color: style.color, font: style.fontFamily };
+      });
+      await expect(app.getByText('5 minutes', { exact: true })).toHaveCSS('color', base.color);
+      await expect(app.getByText('5 minutes', { exact: true })).toHaveCSS('font-family', base.font);
       const search = app.getByRole('textbox', { name: 'Search quick ranges' });
       await search.fill('3h');
       await search.press('Enter');
