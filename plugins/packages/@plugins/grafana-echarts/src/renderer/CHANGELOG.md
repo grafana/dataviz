@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.0](https://github.com/grafana/dataviz/compare/grafana-echarts-renderer/v0.8.0...grafana-echarts-renderer/v0.9.0) (2026-11-25)
+
+
+### 🎉 Features
+
+* **ECharts:** Cartesian gradient modes ([#318](https://github.com/grafana/dataviz/issues/318)) ([c4f068d](https://github.com/grafana/dataviz/commit/c4f068d124c2b179f623d3823a5993e0b10991d5))
+
+
+### 🐛 Bug Fixes
+
+* **echarts:** remove axis breaks from the binned heatmap bucket axis ([#180](https://github.com/grafana/dataviz/issues/180)) ([#312](https://github.com/grafana/dataviz/issues/312)) ([21cf47b](https://github.com/grafana/dataviz/commit/21cf47bba4527517f5345cadc0f0f6fd218a3799))
+* **relation:** graph moving when layout not changing, missing force layout tests ([3208b53](https://github.com/grafana/dataviz/commit/3208b53193a8b31f5344d34cb7215d8b074a9378))
+
 ## [0.8.0](https://github.com/grafana/dataviz/compare/grafana-echarts-renderer/v0.7.1...grafana-echarts-renderer/v0.8.0) (2026-11-24)
 
 
