@@ -24,9 +24,3 @@ export function toRefreshRequest(range: TimeRange): TimeRangeCause {
 export function toAbsoluteTimeRange({ from, to }: TimeRange): AbsoluteTimeRange {
   return { from: from.valueOf(), to: to.valueOf() };
 }
-
-/** The back and forward buttons move the range by half its length, as Grafana does. */
-export function shiftTimeRange({ from, to }: AbsoluteTimeRange, direction: -1 | 1): AbsoluteTimeRange {
-  const step = ((to - from) / 2) * direction;
-  return { from: from + step, to: to + step };
-}

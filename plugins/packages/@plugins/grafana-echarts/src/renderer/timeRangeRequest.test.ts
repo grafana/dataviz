@@ -1,5 +1,5 @@
 import { dateTime, type TimeRange } from '@grafana/data';
-import { shiftTimeRange, toRefreshRequest, toTimeRangeRequest } from './timeRangeRequest';
+import { toRefreshRequest } from './timeRangeRequest';
 
 const absolute = (from: number, to: number): TimeRange => ({
   from: dateTime(from),
@@ -20,12 +20,5 @@ describe('toRefreshRequest', () => {
       from: '1790349877294',
       to: '1790353477294',
     });
-  });
-});
-
-describe('time picker moves', () => {
-  it('moves by half the range, as Grafana does', () => {
-    expect(toTimeRangeRequest(shiftTimeRange({ from: 1000, to: 3000 }, -1))).toMatchObject({ from: '0', to: '2000' });
-    expect(toTimeRangeRequest(shiftTimeRange({ from: 1000, to: 3000 }, 1))).toMatchObject({ from: '2000', to: '4000' });
   });
 });

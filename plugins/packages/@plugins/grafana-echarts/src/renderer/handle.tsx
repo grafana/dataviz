@@ -11,14 +11,13 @@ import React from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { computeState } from './computeState';
 import { LOG_PREFIX } from './log';
-import { readResetRange } from './parseSpec';
 import { errorMessage } from './messages';
 import { type Prepared, prepare } from './prepare';
 import { type RefreshCause, RefreshController } from './refresh';
 import { DEFAULT_HEIGHT_PX } from './registry';
 import { RendererView } from './RendererView';
 import { StateReporter } from './stateReporter';
-import { type TimeRangeCause, toAbsoluteTimeRange, toTimeRangeRequest } from './timeRangeRequest';
+import { toAbsoluteTimeRange, toTimeRangeRequest } from './timeRangeRequest';
 import { toTimeRange } from './toPanelData';
 import { type LegendHook } from './toPanelProps';
 
@@ -57,10 +56,6 @@ class Renderer {
   private size: { width: number; height: number };
   private destroyed = false;
   private localRange: TimeRange | undefined;
-  private resetRange: TimeRangeCause | undefined;
-  private showingResetRange = true;
-  /** Only a pick or Reset can return the chart to the reset range (renderer.77). */
-  private refreshReturnsToResetRange = false;
 
   constructor(
     private readonly el: HTMLElement,
@@ -87,14 +82,7 @@ class Renderer {
     this.spec = spec;
     this.localRange = undefined;
     this.prepared = prepare(spec, this.legendHook());
-    if (!this.resetRange) {
-      const initialRange = readResetRange(spec);
-      this.resetRange = initialRange && toTimeRangeRequest(initialRange);
-    }
-    if (this.refresh?.updated() && this.refreshReturnsToResetRange) {
-      this.showingResetRange = true;
-    }
-    this.refreshReturnsToResetRange = false;
+    this.refresh?.updated();
     this.draw();
   }
 
@@ -237,31 +225,11 @@ class Renderer {
     });
   };
 
-  private readonly onRefreshRequest = (cause: RefreshCause, action?: 'pick' | 'reset') => {
+  private readonly onRefreshRequest = (cause: RefreshCause) => {
     if (this.destroyed || !this.refresh || this.refresh.current.busy) {
       return;
     }
-    if (cause.cause === 'timeRange') {
-      this.showingResetRange = false;
-      if (action === 'pick') {
-        this.resetRange = cause;
-      }
-    }
-    this.refreshReturnsToResetRange = action !== undefined;
     this.refresh.request(cause);
-  };
-
-  private readonly onTimePickerPick = (cause: TimeRangeCause) => this.onRefreshRequest(cause, 'pick');
-
-  private readonly onReset = () => {
-    if (this.refresh) {
-      if (this.resetRange && !this.showingResetRange) {
-        this.onRefreshRequest(this.resetRange, 'reset');
-      }
-    } else if (this.localRange) {
-      this.localRange = undefined;
-      this.draw();
-    }
   };
 
   private readonly onChangeTimeRange = (range: AbsoluteTimeRange, action?: 'pan' | 'zoomOut') => {
@@ -322,7 +290,6 @@ class Renderer {
         timeNavigation={{
           localRange: this.localRange,
           onChangeTimeRange: this.onChangeTimeRange,
-          onReset: this.onReset,
           onPan: this.onPan,
           onZoomOut: this.onZoomOut,
         }}
@@ -331,8 +298,7 @@ class Renderer {
             ? {
                 status: this.refresh.current,
                 onRequest: this.onRefreshRequest,
-                onPick: this.onTimePickerPick,
-                canReset: this.resetRange !== undefined && !this.showingResetRange,
+                onPick: this.onRefreshRequest,
               }
             : undefined
         }
