@@ -107,7 +107,14 @@ test('the manifest gives the version and the specVersions of the built bundle', 
   const manifestPath = path.join(__dirname, '..', 'dist-renderer', 'renderer.manifest.json');
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   const { of } = await draw(page, fixtureSpec('smoke-timeseries'));
-  expect(of('module')).toEqual([{ type: 'module', version: manifest.version, specVersions: manifest.specVersions }]);
+  expect(of('module')).toEqual([
+    {
+      type: 'module',
+      version: manifest.version,
+      specVersions: manifest.specVersions,
+      optionalControls: ['reset-with-refresh', 'reset-without-refresh', 'picker-zoom-out'],
+    },
+  ]);
 });
 
 test('localStorage is blocked in the sandbox, and the chart still draws', async ({ page }) => {

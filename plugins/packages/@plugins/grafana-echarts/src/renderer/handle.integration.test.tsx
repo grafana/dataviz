@@ -221,7 +221,7 @@ describe('the handle', () => {
     expect(el.style.height).toBe('250px');
   });
 
-  // contract-rule: renderer.43
+  // contract-rule: renderer.74
   it('asks the App for the brushed time range', async () => {
     const spec = fixtureSpec('prometheus-line');
     const { from, to } = (spec.data as { range: { from: number; to: number } }).range;
@@ -238,7 +238,7 @@ describe('the handle', () => {
   });
 
   // contract-rule: spec.17
-  // contract-rule: renderer.45
+  // contract-rule: renderer.76
   it('asks for the relative range of the original spec on Reset', async () => {
     const spec = fixtureSpec('prometheus-line');
     const onRefresh = jest.fn();
@@ -257,7 +257,7 @@ describe('the handle', () => {
     });
   });
 
-  // contract-rule: renderer.42
+  // contract-rule: renderer.73
   it('zooms within the supplied data without an App refresh callback', async () => {
     const spec = fixtureSpec('prometheus-line');
     const { from, to } = (spec.data as { range: { from: number; to: number } }).range;
@@ -271,6 +271,9 @@ describe('the handle', () => {
     expect(chart.getOption().xAxis).toEqual([expect.objectContaining({ min: from, max: to })]);
   });
 
+  // contract-rule: renderer.73
+  // contract-rule: renderer.75
+  // contract-rule: delivery.30
   it('keeps local zoom out centered and stops a pan at the end of the data', async () => {
     const spec = fixtureSpec('prometheus-line');
     const { from, to } = (spec.data as { range: { from: number; to: number } }).range;
@@ -278,11 +281,16 @@ describe('the handle', () => {
     await waitForState(el, 'ready');
     const chart = chartOf(el);
     act(() => chart.trigger('brushend', { areas: [{ coordRange: [from + 180_000, to - 360_000] }] }));
+    expect(chart.getOption().xAxis).toEqual([expect.objectContaining({ min: from + 180_000, max: to - 360_000 })]);
     expect(doubleClickPlot(chart)).toBe(true);
     expect(chart.getOption().xAxis).toEqual([expect.objectContaining({ min: from, max: to - 180_000 })]);
 
     dragXAxis(chart, -600, chart.getHeight());
     expect(chart.getOption().xAxis).toEqual([expect.objectContaining({ min: from + 180_000, max: to })]);
+    dragXAxis(chart, 600, chart.getHeight());
+    expect(chart.getOption().xAxis).toEqual([expect.objectContaining({ min: from, max: to - 180_000 })]);
+    expect(doubleClickPlot(chart)).toBe(true);
+    expect(chart.getOption().xAxis).toEqual([expect.objectContaining({ min: from, max: to - 180_000 })]);
   });
 
   it.each([

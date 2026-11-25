@@ -9,7 +9,7 @@ describe('Renderer module', () => {
   it('matches the shape of renderer-api.d.ts of the contract', () => {
     // A type check: tsc fails here if an export is missing or has another type.
     const api: typeof RendererApi = renderer;
-    expect(Object.keys(api).sort()).toEqual(['render', 'specVersions', 'version']);
+    expect(Object.keys(api).sort()).toEqual(['optionalControls', 'render', 'specVersions', 'version']);
   });
 
   // contract-rule: delivery.2

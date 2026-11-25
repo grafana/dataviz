@@ -59,7 +59,7 @@ class Renderer {
   private localRange: TimeRange | undefined;
   private resetRange: TimeRangeCause | undefined;
   private showingResetRange = true;
-  /** Only a pick or Reset can return the chart to the reset range (renderer.48). */
+  /** Only a pick or Reset can return the chart to the reset range (renderer.77). */
   private refreshReturnsToResetRange = false;
 
   constructor(

@@ -1,6 +1,6 @@
 // The Renderer of the viz contract: an ES module that draws a viz spec into an element (`renderer.1`).
 // The contract is the `@grafana/viz-contract` package. The API shape is its `renderer-api.d.ts`.
-import { type RenderHandle, type RenderOptions } from '@grafana/viz-contract/renderer-api';
+import { type OptionalControl, type RenderHandle, type RenderOptions } from '@grafana/viz-contract/renderer-api';
 import { createRenderer } from './handle';
 import { SUPPORTED_SPEC_VERSIONS } from './parseSpec';
 import { LOG_PREFIX } from './log';
@@ -12,6 +12,13 @@ export const version: string = __RENDERER_VERSION__;
 
 /** The viz spec versions that the Renderer supports (`delivery.2`, `delivery.3`). */
 export const specVersions: readonly number[] = SUPPORTED_SPEC_VERSIONS;
+
+/** The renderer offers all three optional time controls (`renderer.71`). */
+export const optionalControls: readonly OptionalControl[] = [
+  'reset-with-refresh',
+  'reset-without-refresh',
+  'picker-zoom-out',
+];
 
 /**
  * Draws `spec` into `el` and returns at once (`renderer.2`). A spec that is not correct gives the error state, and

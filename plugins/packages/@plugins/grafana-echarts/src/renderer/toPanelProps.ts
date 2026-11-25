@@ -62,7 +62,7 @@ export type SpecPanelProps = Omit<PanelComponentProps, 'width' | 'height'>;
  * Then the field overrides are applied to the frames, as `VizPanel.applyFieldConfig` does in Grafana.
  * The panel gets no ad-hoc filter handler. `toSpecData` removes links and actions from the spec and frames. Only the
  * Renderer can add Ask in chat (`renderer.12`).
- * The Renderer supplies the handler for time range changes when it draws the panel (`renderer.43`).
+ * The Renderer supplies the handler for time range changes when it draws the panel (`renderer.74`).
  * https://github.com/grafana/grafana/blob/main/packages/grafana-data/src/panel/getPanelOptionsWithDefaults.ts
  * https://github.com/grafana/grafana/blob/main/packages/grafana-data/src/field/fieldOverrides.ts
  */

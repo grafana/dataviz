@@ -5,7 +5,7 @@
 // `<script type="application/json" id="harness-options">`, and reads the messages.
 import { cacheStore } from 'react-inlinesvg';
 import icons from '../../dist-renderer/icons.json';
-import { render, specVersions, version } from '../../dist-renderer/renderer.js';
+import { optionalControls, render, specVersions, version } from '../../dist-renderer/renderer.js';
 
 // `renderer.15`: before `render`, fill the icon cache of the `@grafana/ui` of the App from `icons.json`.
 // `renderer.16`: the key is the URL that `Icon` requests. With no `window.__grafana_public_path__`, `Icon` requests
@@ -17,7 +17,7 @@ for (const [key, content] of Object.entries(icons)) {
 
 const post = (message) => parent.postMessage(message, '*');
 // The test compares the exports of the built bundle with its manifest (`delivery.2`).
-post({ type: 'module', version, specVersions });
+post({ type: 'module', version, specVersions, optionalControls });
 const spec = JSON.parse(document.getElementById('viz-spec').textContent);
 const options = JSON.parse(document.getElementById('harness-options').textContent);
 // After the first state, `idle` comes when the iframe has no work left in its queue: the effects of the first draw
